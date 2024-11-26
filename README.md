@@ -1,5 +1,20 @@
 # ATM Project
 
+## Objectives
+- Separation between flights
+    - Radar
+    - Estela
+    - LoA 
+- Position and altitude where place starts turn when departing from 24L
+- Radial from DVOR-DME BCN that crosses the turn when departing from 24L
+- IAS of departures at 850, 1500 and 3500 ft for both runways??
+- Altitude and velocity of traffic at threshold when departing at 24L and 06R
+- Horizontal distance from departures to TMR-40 (41,27194444440, 2,04777777778)
+
+### Separation between flights
+
+
+
 ## For Developers
 ### First time installing Project
 1. Clone repo: `git clone https://github.com/Robertguarneros/AsterixProject.git`
@@ -16,13 +31,7 @@ The source code of the project is organized as follows:
  
 ### Libraries
 The main Python libraries used were:
-- math
-- webbrowser
-- PyQt5
-- numpy
-- csv
-- OpenStreetMap
-- Leaflet
+- streamlit
 
 ### Tools Used
 
