@@ -1,11 +1,21 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
+import streamlit as st
+import pandas as pd
+import altair as alt
+import plotly.express as px
 
 
+st.set_page_config(
+    page_title="ATM Project",
+    page_icon="assets/logo_eurocontrol.png",
+    layout="wide",
+    initial_sidebar_state="expanded")
 
+alt.themes.enable("dark")
+    
 
-st.title("ATM Project")
 chart_data = pd.DataFrame(
      np.random.randn(20, 3),
      columns=['a', 'b', 'c'])
