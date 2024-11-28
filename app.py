@@ -1,4 +1,7 @@
 import streamlit as st
+import numpy as np
+
 
 st.title("ATM Project")
-settings = st.Page("settings.py", title="Settings", icon=":material/settings:")
+dataframe = np.random.randn(10, 20)
+st.dataframe(dataframe)
