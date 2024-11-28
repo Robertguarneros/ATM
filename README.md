@@ -17,10 +17,10 @@
 
 ## For Developers
 ### First time installing Project
-1. Clone repo: `git clone https://github.com/Robertguarneros/AsterixProject.git`
+1. Clone repo: `git clone https://github.com/Robertguarneros/ATM.git`
 2. Change into the project directory 
 3. Install the dependencies: `pip install -r requirements.txt`
-4. Run proyect
+4. Run proyect with `streamlit run app.py`
 
 ### Project Structure
 
@@ -52,10 +52,3 @@ The requirements can be installed from the requirements.txt file:
 
 #### Verify Requirements
 `pip list`
-
-
-### To create Executable
-- List dependencies with `pip install -r requirements.txt`
-- `pip install pyinstaller`
-- `pyinstaller --onefile --noconsole --add-data "map.html;." --add-data "UserManual.pdf;." --add-data "assets;assets" App.py`
-- The executable will be generated in the `dist` directory.
