@@ -1,15 +1,33 @@
 # ATM Project
 
 ## Objectives
+
+### 1 David
 - Separation between flights
-    - Radar
-    - Estela
-    - LoA 
-- Position and altitude where place starts turn when departing from 24L
-- Radial from DVOR-DME BCN that crosses the turn when departing from 24L
-- IAS of departures at 850, 1500 and 3500 ft for both runways??
-- Altitude and velocity of traffic at threshold when departing at 24L and 06R
-- Horizontal distance from departures to TMR-40 (41,27194444440, 2,04777777778)
+    - Pasar a stereograficas
+    - Funcion que regrese listas de vuelos consecutivos
+    - Comparar distancias (hecha) y ver que cumplan:
+        - Radar TMA solo tomar 1
+        - Estela, usar fichero clasificación, espacio torre y TMA solo tomar 1
+        - LoA espacio torre
+
+### 2 Angela
+- Función para saber si despega por la 24L o 06R
+- Departures 24L
+    - Función para saber si despega por la 24L o 06R
+    - Detectar que inica el viraje (usar Roll Angle, Heading y True Track Angle)
+    - Position and altitude corrected where turn starts when departing from 24L
+    - Mirar si durante el despegue ha cruzado el radial 234 DVOR-DME BCN
+- IAS of departures at 850, 1500 and 3500 ft for both runways
+
+### 3 Roberto 
+- Mirar las coordenadas del threshold de cada pista
+- Altitude corrected and velocity of traffic at threshold when departing at 24L and 06R
+- Horizontal distance stereographical from departures to TMR-40 (41,27194444440, 2,04777777778)
+
+
+## Example
+df_reshaped = pd.read_csv('data/us-population-2010-2019-reshaped.csv')
 
 ### Separation between flights
 
