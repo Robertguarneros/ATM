@@ -323,8 +323,8 @@ def trajectories_to_stereographical(filtered_trajectories):
             
             # Append the transformed point to the flight's trajectory
             stereographical_points.append({
-                "U": res["U"],
-                "V": res["V"],
+                "U": float(res["U"]),
+                "V": float(res["V"]),
                 #"Height": res["Height"]
             })
         
@@ -333,9 +333,42 @@ def trajectories_to_stereographical(filtered_trajectories):
 
     return stereographical_trajectories
 
+def calculate_min_distance_to_TMR_40_24L(stereographical_trajectories, departures_24L):
+    """
+    Calculate the minimum distance to TMR-40 for flights departing from 24L.
 
-def calculate_min_distance_to_TMR_40():
-    pass 
+    Args:
+        stereographical_trajectories (dict): A dictionary where keys are flight IDs and
+                                             values are lists of (U, V) trajectory points.
+        departures_24L (list): A list of flight IDs departing from 24L.
+
+    Returns:
+        dict: A dictionary where keys are flight IDs and values are the minimum distance to TMR-40.
+    """
+    # Stereographical coordinates of TMR-40
+    TMR_U = 68775.90421516102
+    TMR_V = 18416.232324621615
+
+    # Filter trajectories for flights in departures_24L
+    filtered_trajectories = {
+        flight_id: points for flight_id, points in stereographical_trajectories.items()
+        if flight_id in departures_24L
+    }
+
+    # Dictionary to store the minimum distances
+    min_distances = {}
+
+    # Calculate the minimum distance for each filtered trajectory
+    for flight_id, trajectory_points in filtered_trajectories.items():
+        distances = [
+            calculate_distance(float(point["U"]), float(point["V"]), TMR_U, TMR_V)
+            for point in trajectory_points
+        ]
+        # Store the minimum distance
+        min_distances[flight_id] = min(distances)
+
+    return min_distances # In nautical miles
+
 
 
 file_path = 'assets/InputFiles/2305_02_dep_lebl.xlsx'
@@ -354,3 +387,6 @@ print(stereographical_trajectories["SWN5LC"])
 
 
 departures_6R, departures_24L = filter_departures_by_runway(loaded_departures, loaded_flights)
+
+res = calculate_min_distance_to_TMR_40_24L(stereographical_trajectories,departures_24L)
+print(res)
