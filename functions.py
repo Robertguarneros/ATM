@@ -396,21 +396,17 @@ def calculate_min_distance_to_TMR_40_24L(stereographical_trajectories, departure
     return min_distances  # In nautical miles
 
 
-file_path = "assets/InputFiles/2305_02_dep_lebl.xlsx"
-loaded_departures = load_departures(file_path)
+def load_files(departures_file, flights_file):
+    loaded_departures = load_departures(departures_file)
+    loaded_flights = load_flights(flights_file)
+    return loaded_departures, loaded_flights
 
-file_path2 = "assets/CsvFiles/P3_04_08h.csv"
-loaded_flights = load_flights(file_path2)
-
-corrected_alitude_matrix = correct_altitude_for_file(loaded_flights)
-
-trajectories = get_trajectory_for_airplane(loaded_departures, loaded_flights)
-filtered_trajectories = filter_empty_trajectories(trajectories)
-stereographical_trajectories = trajectories_to_stereographical(filtered_trajectories)
-
-departures_6R, departures_24L = filter_departures_by_runway(
-    loaded_departures, loaded_flights
-)
-
-res = calculate_min_distance_to_TMR_40_24L(stereographical_trajectories, departures_24L)
-print(res)
+def calculate_min_distance_to_TMR_40_24L_global(loaded_departures,loaded_flights):
+    trajectories = get_trajectory_for_airplane(loaded_departures, loaded_flights)
+    filtered_trajectories = filter_empty_trajectories(trajectories)
+    stereographical_trajectories = trajectories_to_stereographical(filtered_trajectories)
+    departures_6R, departures_24L = filter_departures_by_runway(
+        loaded_departures, loaded_flights
+    )
+    minimum_distances = calculate_min_distance_to_TMR_40_24L(stereographical_trajectories, departures_24L)
+    return minimum_distances # Returns a dictionary with the flight identifier and the minimum distance in NM
