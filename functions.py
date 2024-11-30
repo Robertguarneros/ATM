@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-
+import csv
 # Constants
 A = 6378137.0  # Semi-major axis in meters
 E2 = 0.00669437999014  # Eccentricity squared for WGS84
@@ -128,20 +128,23 @@ def get_stereographical_from_lat_lon_alt(lat, lon, alt):
     return stereographical_coords
 
 def corrected_altitude(BarometricPressureSetting, FlightLevel):
+    altitude_in_feet_corrected = 0
     if BarometricPressureSetting!= "N/A":
         QNH_actual = float(BarometricPressureSetting)
         QNH_standard = 1013.2
         if float(FlightLevel) < 60:
             if 1013 <= QNH_actual <= 1013.3:
-                altitude_in_feet_corrected = FlightLevel * 100
+                altitude_in_feet_corrected = float(FlightLevel) * 100
             else:
                 altitude_in_feet_corrected = (
-                    float((FlightLevel) * 100)
+                    float(float(FlightLevel) * 100)
                     + (QNH_actual - QNH_standard) * 30
                 )
                 altitude_in_feet_corrected = round(
                     altitude_in_feet_corrected, 2
                 )
+        else:
+            altitude_in_feet_corrected = float(FlightLevel) * 100
     return altitude_in_feet_corrected
 
 def calculate_distance(U1, V1, U2, V2):
@@ -153,14 +156,68 @@ def calculate_distance(U1, V1, U2, V2):
 def load_departures(file_path):
     df = pd.read_excel(file_path)
 
-    # Display the first few rows of the dataframe
+    # Display the DataFrame preview
     print("DataFrame Preview:")
     print(df.head())
 
-    # Convert the DataFrame to a matrix (list of lists)
-    matrix = df.values.tolist()
+    # Ensure header row is correctly interpreted
+    print("Column Names:")
+    print(df.columns.tolist())
+
+    # Include the header row in the matrix
+    matrix = [df.columns.tolist()] + df.values.tolist()
+
+    # Return the matrix created
+    return matrix
+
+
+# Load flight data
+def load_flights(file_path):
+    # Open the CSV file
+    with open(file_path, 'r', encoding='utf-8') as csvfile:
+        reader = csv.reader(csvfile, delimiter=';')
+        
+        # Generate a matrix by reading all rows
+        matrix = []
+        for row in reader:
+            # Replace commas with dots, excluding column 23, and replace 'NV' with 'N/A'
+            processed_row = [
+                cell.replace(',', '.').replace('NV', 'N/A') if ',' in cell and i != 23 else cell.replace('NV', 'N/A')
+                for i, cell in enumerate(row)
+            ]
+            matrix.append(processed_row)
+        
+        # Remove the 25th column (index 24) from each row
+        for row in matrix:
+            if len(row) > 24:  # Ensure row has at least 25 columns
+                del row[24]  # Remove the 25th column
+
+    return matrix
+
+
+
+def correct_altitude_for_file(matrix):
+    # Add a column that has the corrected altitude
+    # Find the column indices for BP (Barometric Pressure) and FL (Flight Level)
+    bp_index = matrix[0].index('BP')
+    fl_index = matrix[0].index('FL')
+    
+    # Append a new header for the corrected altitude
+    matrix[0].append('CorrectedAltitude')
+
+    # Process each row (skip the header)
+    for row in matrix[1:]:
+        barometric_pressure = row[bp_index]
+        flight_level = row[fl_index]
+        corrected_alt = corrected_altitude(barometric_pressure, flight_level)
+        row.append(corrected_alt)
 
     return matrix
 
 file_path = 'assets/InputFiles/2305_02_dep_lebl.xlsx'
 loaded_departures = load_departures(file_path)
+
+file_path2='assets/CsvFiles/P3_04_08h.csv'
+loaded_flights = load_flights(file_path2)
+
+corrected_alitude_matrix = correct_altitude_for_file(loaded_flights)
