@@ -39,5 +39,14 @@ if departures_file and flights_file:
     # Sort the DataFrame by distance for better visualization
     df = df.sort_values(by="Minimum Distance (NM)")
 
-    # Plot the line chart
-    st.line_chart(df.set_index("Flight ID"))
+    # Altair chart for better customization
+    chart = alt.Chart(df).mark_line().encode(
+        x="Flight ID:N",  # Nominal (categorical) axis
+        y="Minimum Distance (NM):Q"  # Quantitative axis
+    ).properties(
+        title="Minimum Distance to TMR-40 for Flights",
+        width=1400,
+        height=600
+    )
+
+    st.altair_chart(chart)
