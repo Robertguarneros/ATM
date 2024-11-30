@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 # Constants
 A = 6378137.0  # Semi-major axis in meters
@@ -146,3 +147,20 @@ def corrected_altitude(BarometricPressureSetting, FlightLevel):
 def calculate_distance(U1, V1, U2, V2):
     distance = np.sqrt((U1 - U2) ** 2 + (V1 - V2) ** 2) / 1852 # Return distance in nautical miles
     return distance
+
+
+# Load DEP file
+def load_departures(file_path):
+    df = pd.read_excel(file_path)
+
+    # Display the first few rows of the dataframe
+    print("DataFrame Preview:")
+    print(df.head())
+
+    # Convert the DataFrame to a matrix (list of lists)
+    matrix = df.values.tolist()
+
+    return matrix
+
+file_path = 'assets/InputFiles/2305_02_dep_lebl.xlsx'
+loaded_departures = load_departures(file_path)
