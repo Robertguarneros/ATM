@@ -405,10 +405,9 @@ def detect_turn_start_from_runway_24L(matrix, departures24L):
     heading_idx = header.index('HEADING')  # Heading
     tta_idx = header.index('TTA')  # True Track Angle
     ti_idx = header.index('TI')  # Aircraft Identifier
-    lat_idx = header.index('LAT')
-    lon_idx = header.index('LON')
-    alt_idx = header.index('CorrectedAltitude')
-
+    lat_idx = header.index('LAT')  # Latitude
+    lon_idx = header.index('LON')  # Longitude
+    alt_idx = header.index('CorrectedAltitude')  # Corrected Altitude
 
     # Group rows by aircraft ID (TI)
     aircraft_data = {}
@@ -424,30 +423,54 @@ def detect_turn_start_from_runway_24L(matrix, departures24L):
     # Process each aircraft separately
     for aircraft_id, rows in aircraft_data.items():
         if aircraft_id in departures24L:  # Ensure this aircraft is in departures from 24L
-            for i in range(len(rows) - 1):
-                # Get the current and next row for this aircraft
+            last_valid_ra_row = None  # Last valid row with RA and TTA
+            for i in range(len(rows)):
                 current_row = rows[i]
-                next_row = rows[i + 1]
 
                 # Convert relevant values to numbers (handle "N/A")
                 try:
-                    ra_current = float(current_row[ra_idx].replace(',', '.')) if current_row[ra_idx] != 'N/A' else 0
-                    ra_next = float(next_row[ra_idx].replace(',', '.')) if next_row[ra_idx] != 'N/A' else 0
-                    heading_current = float(current_row[heading_idx].replace(',', '.'))
-                    heading_next = float(next_row[heading_idx].replace(',', '.'))
-                    tta_current = float(current_row[tta_idx].replace(',', '.')) if current_row[tta_idx] != 'N/A' else 0
-                    tta_next = float(next_row[tta_idx].replace(',', '.')) if next_row[tta_idx] != 'N/A' else 0
+                    ra = float(current_row[ra_idx].replace(',', '.')) if current_row[ra_idx] != 'N/A' else None
+                    tta = float(current_row[tta_idx].replace(',', '.')) if current_row[tta_idx] != 'N/A' else None
+                    heading = float(current_row[heading_idx].replace(',', '.'))
                 except ValueError:
                     continue
 
-                # Detect the start of the turn based on significant heading changes
-                if abs(ra_next - ra_current) > 2 or abs(heading_next - heading_current) > 5:
-                    # Record the turn start with TI, LAT, and LON
-                    lat = current_row[lat_idx]
-                    lon = current_row[lon_idx]
-                    alt = current_row[alt_idx]
-                    aircraft_turns[aircraft_id] = (aircraft_id, lat, lon, alt)
-                    break  # Exit loop after detecting the first turn for this aircraft
+                # If RA and TTA are available, compare with the last valid row
+                if ra is not None and tta is not None:
+                    if last_valid_ra_row:
+                        try:
+                            last_ra = float(last_valid_ra_row[ra_idx].replace(',', '.'))
+                            last_tta = float(last_valid_ra_row[tta_idx].replace(',', '.'))
+                        except ValueError:
+                            continue
 
-    # Return the vector with the results
-    return [info for info in aircraft_turns.values() if info is not None]
+                        if (
+                            abs(ra - last_ra) > 2 or  # Significant change in RA
+                            abs(tta - last_tta) > 5   # Significant change in TTA
+                        ):
+                            lat = current_row[lat_idx]
+                            lon = current_row[lon_idx]
+                            alt = current_row[alt_idx]
+                            aircraft_turns[aircraft_id] = (aircraft_id, lat, lon, alt)
+                            break
+
+                    # Update the last valid row with RA and TTA
+                    last_valid_ra_row = current_row
+
+                # If RA and TTA are not available, use Heading to detect the turn
+                elif i > 0:  # Compare with the previous row
+                    prev_row = rows[i - 1]
+                    try:
+                        prev_heading = float(prev_row[heading_idx].replace(',', '.'))
+                    except ValueError:
+                        continue
+
+                    if abs(heading - prev_heading) > 5:  # Significant change in Heading
+                        lat = current_row[lat_idx]
+                        lon = current_row[lon_idx]
+                        alt = current_row[alt_idx]
+                        aircraft_turns[aircraft_id] = (aircraft_id, lat, lon, alt)
+                        break  # Exit after detecting the first turn
+
+    # Return the list with the results
+    return [info for info in aircraft_turns.values()]
