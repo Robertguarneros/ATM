@@ -23,7 +23,7 @@
 ### 3 Roberto 
 - Mirar las coordenadas del threshold de cada pista
 - Altitude corrected and velocity of traffic at threshold when departing at 24L and 06R
-- Horizontal distance stereographical from departures to TMR-40 (41,27194444440, 2,04777777778)
+- Horizontal distance stereographical from departures to TMR-40 (41,27194444440, 2,04777777778) por 24L
 
 
 ## Example

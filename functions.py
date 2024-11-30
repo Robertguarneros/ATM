@@ -157,12 +157,12 @@ def load_departures(file_path):
     df = pd.read_excel(file_path)
 
     # Display the DataFrame preview
-    print("DataFrame Preview:")
-    print(df.head())
+    # print("DataFrame Preview:")
+    # print(df.head())
 
     # Ensure header row is correctly interpreted
-    print("Column Names:")
-    print(df.columns.tolist())
+    # print("Column Names:")
+    # print(df.columns.tolist())
 
     # Include the header row in the matrix
     matrix = [df.columns.tolist()] + df.values.tolist()
@@ -195,7 +195,7 @@ def load_flights(file_path):
     return matrix
 
 
-
+# Insert corrected altitude for a file at the last column
 def correct_altitude_for_file(matrix):
     # Add a column that has the corrected altitude
     # Find the column indices for BP (Barometric Pressure) and FL (Flight Level)
@@ -214,6 +214,23 @@ def correct_altitude_for_file(matrix):
 
     return matrix
 
+
+# Get trajectory for an airplane
+def get_trajectory_for_airplane(loaded_departures, loaded_flights):
+    # Take "Indicativo" column and for each TI, calculate the route saving the flight identifier, lat, lon and h at a time 
+    indicativo_index = loaded_departures[0].index('Indicativo')
+    ti_index = loaded_flights[0].index('TI')
+    time_index = loaded_flights[0].index('TIME(s)')
+    lat_index = loaded_flights[0].index('LAT')
+    lon_index = loaded_flights[0].index('LON')
+    h_index = loaded_flights[0].index('H')
+
+
+
+
+
+
+
 file_path = 'assets/InputFiles/2305_02_dep_lebl.xlsx'
 loaded_departures = load_departures(file_path)
 
@@ -221,3 +238,5 @@ file_path2='assets/CsvFiles/P3_04_08h.csv'
 loaded_flights = load_flights(file_path2)
 
 corrected_alitude_matrix = correct_altitude_for_file(loaded_flights)
+
+get_trajectory_for_airplane(loaded_departures, loaded_flights)
