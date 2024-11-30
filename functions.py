@@ -1,6 +1,8 @@
+import csv
+
 import numpy as np
 import pandas as pd
-import csv
+
 # Constants
 A = 6378137.0  # Semi-major axis in meters
 E2 = 0.00669437999014  # Eccentricity squared for WGS84
@@ -22,6 +24,7 @@ def calculate_rotation_matrix(lat, lon):
     r33 = np.sin(lat)
     return np.array([[r11, r12, r13], [r21, r22, r23], [r31, r32, r33]])
 
+
 def calculate_translation_matrix(lat, lon, alt):
     """
     Calculates the translation matrix for a given latitude, longitude (in radians), and altitude (in meters).
@@ -31,6 +34,7 @@ def calculate_translation_matrix(lat, lon, alt):
     ty = (nu + alt) * np.cos(lat) * np.sin(lon)
     tz = (nu * (1 - E2) + alt) * np.sin(lat)
     return np.array([tx, ty, tz])
+
 
 def geodesic_to_geocentric(lat, lon, alt):
     """
@@ -45,6 +49,7 @@ def geodesic_to_geocentric(lat, lon, alt):
     y = (nu + alt) * np.cos(lat_rad) * np.sin(lon_rad)
     z = (nu * (1 - E2) + alt) * np.sin(lat_rad)
     return np.array([x, y, z])
+
 
 def get_rotation_matrix(lat, lon):
     lat_rad = np.radians(lat)
@@ -65,6 +70,7 @@ def get_rotation_matrix(lat, lon):
         ]
     )
 
+
 def get_translation_vector(lat, lon, alt):
     lat_rad = np.radians(lat)
     lon_rad = np.radians(lon)
@@ -76,6 +82,7 @@ def get_translation_vector(lat, lon, alt):
             [(nu * (1 - E2) + alt) * np.sin(lat_rad)],
         ]
     )
+
 
 def geocentric_to_system_cartesian(geocentric_coords):
     geo = {
@@ -95,6 +102,7 @@ def geocentric_to_system_cartesian(geocentric_coords):
         "Y": result_vector[1, 0],
         "Z": result_vector[2, 0],
     }
+
 
 def system_cartesian_to_system_stereographical(c):
     class CoordinatesUVH:
@@ -119,6 +127,7 @@ def system_cartesian_to_system_stereographical(c):
 
     return {"U": res.U, "V": res.V, "Height": res.Height}
 
+
 def get_stereographical_from_lat_lon_alt(lat, lon, alt):
     geocentric_coords = geodesic_to_geocentric(lat, lon, alt)
     cartesian_coords = geocentric_to_system_cartesian(geocentric_coords)
@@ -127,9 +136,10 @@ def get_stereographical_from_lat_lon_alt(lat, lon, alt):
     )
     return stereographical_coords
 
+
 def corrected_altitude(BarometricPressureSetting, FlightLevel):
     altitude_in_feet_corrected = 0
-    if BarometricPressureSetting!= "N/A":
+    if BarometricPressureSetting != "N/A":
         QNH_actual = float(BarometricPressureSetting)
         QNH_standard = 1013.2
         if float(FlightLevel) < 60:
@@ -137,18 +147,18 @@ def corrected_altitude(BarometricPressureSetting, FlightLevel):
                 altitude_in_feet_corrected = float(FlightLevel) * 100
             else:
                 altitude_in_feet_corrected = (
-                    float(float(FlightLevel) * 100)
-                    + (QNH_actual - QNH_standard) * 30
+                    float(float(FlightLevel) * 100) + (QNH_actual - QNH_standard) * 30
                 )
-                altitude_in_feet_corrected = round(
-                    altitude_in_feet_corrected, 2
-                )
+                altitude_in_feet_corrected = round(altitude_in_feet_corrected, 2)
         else:
             altitude_in_feet_corrected = float(FlightLevel) * 100
     return altitude_in_feet_corrected
 
+
 def calculate_distance(U1, V1, U2, V2):
-    distance = np.sqrt((U1 - U2) ** 2 + (V1 - V2) ** 2) / 1852 # Return distance in nautical miles
+    distance = (
+        np.sqrt((U1 - U2) ** 2 + (V1 - V2) ** 2) / 1852
+    )  # Return distance in nautical miles
     return distance
 
 
@@ -174,19 +184,23 @@ def load_departures(file_path):
 # Load flight data
 def load_flights(file_path):
     # Open the CSV file
-    with open(file_path, 'r', encoding='utf-8') as csvfile:
-        reader = csv.reader(csvfile, delimiter=';')
-        
+    with open(file_path, "r", encoding="utf-8") as csvfile:
+        reader = csv.reader(csvfile, delimiter=";")
+
         # Generate a matrix by reading all rows
         matrix = []
         for row in reader:
             # Replace commas with dots, excluding column 23, and replace 'NV' with 'N/A'
             processed_row = [
-                cell.replace(',', '.').replace('NV', 'N/A') if ',' in cell and i != 23 else cell.replace('NV', 'N/A')
+                (
+                    cell.replace(",", ".").replace("NV", "N/A")
+                    if "," in cell and i != 23
+                    else cell.replace("NV", "N/A")
+                )
                 for i, cell in enumerate(row)
             ]
             matrix.append(processed_row)
-        
+
         # Remove the 25th column (index 24) from each row
         for row in matrix:
             if len(row) > 24:  # Ensure row has at least 25 columns
@@ -199,11 +213,11 @@ def load_flights(file_path):
 def correct_altitude_for_file(matrix):
     # Add a column that has the corrected altitude
     # Find the column indices for BP (Barometric Pressure) and FL (Flight Level)
-    bp_index = matrix[0].index('BP')
-    fl_index = matrix[0].index('FL')
-    
+    bp_index = matrix[0].index("BP")
+    fl_index = matrix[0].index("FL")
+
     # Append a new header for the corrected altitude
-    matrix[0].append('CorrectedAltitude')
+    matrix[0].append("CorrectedAltitude")
 
     # Process each row (skip the header)
     for row in matrix[1:]:
@@ -218,14 +232,14 @@ def correct_altitude_for_file(matrix):
 # Get trajectory for an airplane
 def get_trajectory_for_airplane(loaded_departures, loaded_flights):
     # Find the relevant column indices
-    indicativo_index = loaded_departures[0].index('Indicativo')
-    ti_index = loaded_flights[0].index('TI')
-    time_index = loaded_flights[0].index('TIME(s)')
-    lat_index = loaded_flights[0].index('LAT')
-    lon_index = loaded_flights[0].index('LON')
-    h_index = loaded_flights[0].index('H')
-    corrected_altitude_index = loaded_flights[0].index('CorrectedAltitude')
-    
+    indicativo_index = loaded_departures[0].index("Indicativo")
+    ti_index = loaded_flights[0].index("TI")
+    time_index = loaded_flights[0].index("TIME(s)")
+    lat_index = loaded_flights[0].index("LAT")
+    lon_index = loaded_flights[0].index("LON")
+    h_index = loaded_flights[0].index("H")
+    corrected_altitude_index = loaded_flights[0].index("CorrectedAltitude")
+
     # Extract all unique flight identifiers from departures
     flight_identifiers = set(row[indicativo_index] for row in loaded_departures[1:])
 
@@ -236,7 +250,7 @@ def get_trajectory_for_airplane(loaded_departures, loaded_flights):
     for row in loaded_flights[1:]:
         # Get the current flight identifier (TI column)
         flight_identifier = row[ti_index]
-        
+
         # Check if this flight identifier is in the departures
         if flight_identifier in trajectories:
             # Extract relevant data for this row
@@ -245,17 +259,20 @@ def get_trajectory_for_airplane(loaded_departures, loaded_flights):
             lon = row[lon_index]
             h = row[h_index]
             corrected_altitude = row[corrected_altitude_index]
-            
+
             # Save the data for the trajectory
-            trajectories[flight_identifier].append({
-                'time': time,
-                'latitude': lat,
-                'longitude': lon,
-                'height': h,
-                'corrected_altitude':corrected_altitude
-            })
-    
+            trajectories[flight_identifier].append(
+                {
+                    "time": time,
+                    "latitude": lat,
+                    "longitude": lon,
+                    "height": h,
+                    "corrected_altitude": corrected_altitude,
+                }
+            )
+
     return trajectories
+
 
 def filter_empty_trajectories(trajectories):
     # Create a new dictionary containing only flights with non-empty trajectories
@@ -273,37 +290,42 @@ def filter_departures_by_runway(departures_matrix, flights_matrix):
     flights_header = flights_matrix[0]
 
     # Find the index of relevant columns in the departures matrix
-    pista_desp_index = departures_header.index('PistaDesp')
-    indicativo_index = departures_header.index('Indicativo')
+    pista_desp_index = departures_header.index("PistaDesp")
+    indicativo_index = departures_header.index("Indicativo")
 
     # Find the index of relevant columns in the flights matrix
-    ta_index = flights_header.index('TI')
+    ta_index = flights_header.index("TI")
 
     # Filter departures by runway 6R
     departures_6R = [
-        row[indicativo_index] for row in departures_matrix[1:] 
-        if row[pista_desp_index] == 'LEBL-06R'
+        row[indicativo_index]
+        for row in departures_matrix[1:]
+        if row[pista_desp_index] == "LEBL-06R"
     ]
-        
+
     matching_departures_6R = [
-        indicativo for indicativo in departures_6R 
+        indicativo
+        for indicativo in departures_6R
         if any(indicativo == row[ta_index] for row in flights_matrix[1:])
     ]
-    #print("Matching departures 6R with CSV:", matching_departures_6R)
-    
+    # print("Matching departures 6R with CSV:", matching_departures_6R)
+
     # Filter departures by runway 24L
     departures_24L = [
-        row[indicativo_index] for row in departures_matrix[1:] 
-        if row[pista_desp_index] == 'LEBL-24L'
+        row[indicativo_index]
+        for row in departures_matrix[1:]
+        if row[pista_desp_index] == "LEBL-24L"
     ]
-    
+
     matching_departures_24L = [
-        indicativo for indicativo in departures_24L 
+        indicativo
+        for indicativo in departures_24L
         if any(indicativo == row[ta_index] for row in flights_matrix[1:])
     ]
-    #print("Matching departures 24L with CSV:", matching_departures_24L)
-    
+    # print("Matching departures 24L with CSV:", matching_departures_24L)
+
     return matching_departures_6R, matching_departures_24L
+
 
 def trajectories_to_stereographical(filtered_trajectories):
     # Initialize the new dictionary for stereographical coordinates
@@ -314,24 +336,27 @@ def trajectories_to_stereographical(filtered_trajectories):
         stereographical_points = []
         for point in points:
             # Extract latitude, longitude, and height from the trajectory point
-            lat = float(point['latitude'])
-            lon = float(point['longitude'])
-            alt = float(point['height'])
-            
+            lat = float(point["latitude"])
+            lon = float(point["longitude"])
+            alt = float(point["height"])
+
             # Convert to stereographical coordinates
             res = get_stereographical_from_lat_lon_alt(lat, lon, alt)
-            
+
             # Append the transformed point to the flight's trajectory
-            stereographical_points.append({
-                "U": float(res["U"]),
-                "V": float(res["V"]),
-                #"Height": res["Height"]
-            })
-        
+            stereographical_points.append(
+                {
+                    "U": float(res["U"]),
+                    "V": float(res["V"]),
+                    # "Height": res["Height"]
+                }
+            )
+
         # Store the transformed trajectory for this flight
         stereographical_trajectories[flight_id] = stereographical_points
 
     return stereographical_trajectories
+
 
 def calculate_min_distance_to_TMR_40_24L(stereographical_trajectories, departures_24L):
     """
@@ -351,7 +376,8 @@ def calculate_min_distance_to_TMR_40_24L(stereographical_trajectories, departure
 
     # Filter trajectories for flights in departures_24L
     filtered_trajectories = {
-        flight_id: points for flight_id, points in stereographical_trajectories.items()
+        flight_id: points
+        for flight_id, points in stereographical_trajectories.items()
         if flight_id in departures_24L
     }
 
@@ -367,14 +393,13 @@ def calculate_min_distance_to_TMR_40_24L(stereographical_trajectories, departure
         # Store the minimum distance
         min_distances[flight_id] = min(distances)
 
-    return min_distances # In nautical miles
+    return min_distances  # In nautical miles
 
 
-
-file_path = 'assets/InputFiles/2305_02_dep_lebl.xlsx'
+file_path = "assets/InputFiles/2305_02_dep_lebl.xlsx"
 loaded_departures = load_departures(file_path)
 
-file_path2='assets/CsvFiles/P3_04_08h.csv'
+file_path2 = "assets/CsvFiles/P3_04_08h.csv"
 loaded_flights = load_flights(file_path2)
 
 corrected_alitude_matrix = correct_altitude_for_file(loaded_flights)
@@ -383,10 +408,9 @@ trajectories = get_trajectory_for_airplane(loaded_departures, loaded_flights)
 filtered_trajectories = filter_empty_trajectories(trajectories)
 stereographical_trajectories = trajectories_to_stereographical(filtered_trajectories)
 
-print(stereographical_trajectories["SWN5LC"])
+departures_6R, departures_24L = filter_departures_by_runway(
+    loaded_departures, loaded_flights
+)
 
-
-departures_6R, departures_24L = filter_departures_by_runway(loaded_departures, loaded_flights)
-
-res = calculate_min_distance_to_TMR_40_24L(stereographical_trajectories,departures_24L)
+res = calculate_min_distance_to_TMR_40_24L(stereographical_trajectories, departures_24L)
 print(res)

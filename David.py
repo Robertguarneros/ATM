@@ -1,47 +1,54 @@
-import pandas as pd
-from datetime import timedelta
-
 # Son los q me ha dicho GPT si hay otros mejores se cambia
 import tkinter as tk
-from tkinter import filedialog 
+from datetime import timedelta
+from tkinter import filedialog
+
+import pandas as pd
 
 
 def extract_contiguous_pairs():
     # Cargar el archivo
-    file_path = 'assets/InputFiles/2305_02_dep_lebl.xlsx'
+    file_path = "assets/InputFiles/2305_02_dep_lebl.xlsx"
     df = pd.read_excel(file_path)
-    
+
     time_threshold_minutes = 4
-    
+
     # Convertir la columna 'HoraDespegue' a tipo datetime
-    df['HoraDespegue'] = pd.to_datetime(df['HoraDespegue'])
-    
+    df["HoraDespegue"] = pd.to_datetime(df["HoraDespegue"])
+
     # Ordenar por 'HoraDespegue'
-    df_sorted = df.sort_values(by='HoraDespegue').reset_index(drop=True)
-    
+    df_sorted = df.sort_values(by="HoraDespegue").reset_index(drop=True)
+
     # Listas para almacenar los vuelos contiguos por pista
     contiguous_flights_24L = []
     contiguous_flights_06R = []
-    
+
     # Iterar sobre las filas para calcular diferencias entre vuelos consecutivos
     for i in range(len(df_sorted) - 1):
         current_flight = df_sorted.iloc[i]
         next_flight = df_sorted.iloc[i + 1]
-        
+
         # Calcular la diferencia de tiempo entre vuelos consecutivos
-        time_difference = next_flight['HoraDespegue'] - current_flight['HoraDespegue']
-        
+        time_difference = next_flight["HoraDespegue"] - current_flight["HoraDespegue"]
+
         if time_difference < timedelta(minutes=time_threshold_minutes):
             # Verificar la pista de despegue y añadir al grupo correspondiente
-            if current_flight.iloc[7] == 'LEBL-24L' and next_flight.iloc[7] == 'LEBL-24L':
-                contiguous_flights_24L.append((current_flight['Indicativo'], next_flight['Indicativo']))
-            elif current_flight.iloc[7] == 'LEBL-06R' and next_flight.iloc[7] == 'LEBL-06R':
-                contiguous_flights_06R.append((current_flight['Indicativo'], next_flight['Indicativo']))
-    
+            if (
+                current_flight.iloc[7] == "LEBL-24L"
+                and next_flight.iloc[7] == "LEBL-24L"
+            ):
+                contiguous_flights_24L.append(
+                    (current_flight["Indicativo"], next_flight["Indicativo"])
+                )
+            elif (
+                current_flight.iloc[7] == "LEBL-06R"
+                and next_flight.iloc[7] == "LEBL-06R"
+            ):
+                contiguous_flights_06R.append(
+                    (current_flight["Indicativo"], next_flight["Indicativo"])
+                )
+
     return contiguous_flights_24L, contiguous_flights_06R
-
-
-
 
 
 pairs_24L, pairs_06R = extract_contiguous_pairs()
@@ -49,22 +56,7 @@ print("Contiguous flights for LEBL-24L:", pairs_24L)
 print("Contiguous flights for LEBL-06R:", pairs_06R)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-'''
+"""
 
 # Función para seleccionar el archivo CSV
 def select_file():
@@ -142,4 +134,4 @@ def extract_contiguous_pairs(file_path):
 
     # Devolver la lista de pares consecutivos como lista
     return list(contiguous_pairs)
-    '''
+    """
