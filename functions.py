@@ -217,13 +217,54 @@ def correct_altitude_for_file(matrix):
 
 # Get trajectory for an airplane
 def get_trajectory_for_airplane(loaded_departures, loaded_flights):
-    # Take "Indicativo" column and for each TI, calculate the route saving the flight identifier, lat, lon and h at a time 
+    # Find the relevant column indices
     indicativo_index = loaded_departures[0].index('Indicativo')
     ti_index = loaded_flights[0].index('TI')
     time_index = loaded_flights[0].index('TIME(s)')
     lat_index = loaded_flights[0].index('LAT')
     lon_index = loaded_flights[0].index('LON')
     h_index = loaded_flights[0].index('H')
+    corrected_altitude_index = loaded_flights[0].index('CorrectedAltitude')
+    
+    # Extract all unique flight identifiers from departures
+    flight_identifiers = set(row[indicativo_index] for row in loaded_departures[1:])
+
+    # Prepare the trajectory dictionary
+    trajectories = {flight: [] for flight in flight_identifiers}
+
+    # Iterate through flights to calculate the route
+    for row in loaded_flights[1:]:
+        # Get the current flight identifier (TI column)
+        flight_identifier = row[ti_index]
+        
+        # Check if this flight identifier is in the departures
+        if flight_identifier in trajectories:
+            # Extract relevant data for this row
+            time = row[time_index]
+            lat = row[lat_index]
+            lon = row[lon_index]
+            h = row[h_index]
+            corrected_altitude = row[corrected_altitude_index]
+            
+            # Save the data for the trajectory
+            trajectories[flight_identifier].append({
+                'time': time,
+                'latitude': lat,
+                'longitude': lon,
+                'height': h,
+                'corrected_altitude':corrected_altitude
+            })
+    
+    return trajectories
+
+def filter_empty_trajectories(trajectories):
+    # Create a new dictionary containing only flights with non-empty trajectories
+    filtered_trajectories = {
+        flight_id: points
+        for flight_id, points in trajectories.items()
+        if points  # Keep only if the points list is not empty
+    }
+    return filtered_trajectories
 
 
 def filter_departures_by_runway(departures_matrix, flights_matrix):
@@ -248,7 +289,7 @@ def filter_departures_by_runway(departures_matrix, flights_matrix):
         indicativo for indicativo in departures_6R 
         if any(indicativo == row[ta_index] for row in flights_matrix[1:])
     ]
-    print("Matching departures 6R with CSV:", matching_departures_6R)
+    #print("Matching departures 6R with CSV:", matching_departures_6R)
     
     # Filter departures by runway 24L
     departures_24L = [
@@ -260,7 +301,7 @@ def filter_departures_by_runway(departures_matrix, flights_matrix):
         indicativo for indicativo in departures_24L 
         if any(indicativo == row[ta_index] for row in flights_matrix[1:])
     ]
-    print("Matching departures 24L with CSV:", matching_departures_24L)
+    #print("Matching departures 24L with CSV:", matching_departures_24L)
     
     return matching_departures_6R, matching_departures_24L
 
@@ -275,6 +316,7 @@ loaded_flights = load_flights(file_path2)
 
 corrected_alitude_matrix = correct_altitude_for_file(loaded_flights)
 
-get_trajectory_for_airplane(loaded_departures, loaded_flights)
+trajectories = get_trajectory_for_airplane(loaded_departures, loaded_flights)
+filtered_trajectories = filter_empty_trajectories(trajectories)
 
-filter_departures_by_runway(loaded_departures, loaded_flights)
+departures_6R, departures_24L = filter_departures_by_runway(loaded_departures, loaded_flights)
