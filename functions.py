@@ -163,50 +163,45 @@ def calculate_distance(U1, V1, U2, V2):
 
 
 # Load DEP file
-def load_departures(file_path):
-    df = pd.read_excel(file_path)
-
-    # Display the DataFrame preview
-    # print("DataFrame Preview:")
-    # print(df.head())
-
-    # Ensure header row is correctly interpreted
-    # print("Column Names:")
-    # print(df.columns.tolist())
+def load_departures(file_obj):
+    """
+    Load departures data from a file-like object (e.g., UploadedFile from Streamlit).
+    """
+    # Read the Excel file directly from the file-like object
+    df = pd.read_excel(file_obj)
 
     # Include the header row in the matrix
     matrix = [df.columns.tolist()] + df.values.tolist()
 
-    # Return the matrix created
     return matrix
+
 
 
 # Load flight data
-def load_flights(file_path):
-    # Open the CSV file
-    with open(file_path, "r", encoding="utf-8") as csvfile:
-        reader = csv.reader(csvfile, delimiter=";")
-
-        # Generate a matrix by reading all rows
-        matrix = []
-        for row in reader:
-            # Replace commas with dots, excluding column 23, and replace 'NV' with 'N/A'
-            processed_row = [
-                (
-                    cell.replace(",", ".").replace("NV", "N/A")
-                    if "," in cell and i != 23
-                    else cell.replace("NV", "N/A")
-                )
-                for i, cell in enumerate(row)
-            ]
-            matrix.append(processed_row)
-
-        # Remove the 25th column (index 24) from each row
-        for row in matrix:
-            if len(row) > 24:  # Ensure row has at least 25 columns
-                del row[24]  # Remove the 25th column
+def load_flights(file_obj):
+    """
+    Load flight data from a file-like object (e.g., UploadedFile from Streamlit).
+    """
+    # Open the file-like object directly
+    reader = csv.reader(file_obj.read().decode("utf-8").splitlines(), delimiter=";")
+    
+    # Generate a matrix by reading all rows
+    matrix = []
+    for row in reader:
+        # Replace commas with dots, excluding column 23, and replace 'NV' with 'N/A'
+        processed_row = [
+            cell.replace(",", ".").replace("NV", "N/A") if "," in cell and i != 23 else cell.replace("NV", "N/A")
+            for i, cell in enumerate(row)
+        ]
+        matrix.append(processed_row)
+    
+    # Remove the 25th column (index 24) from each row
+    for row in matrix:
+        if len(row) > 24:  # Ensure row has at least 25 columns
+            del row[24]  # Remove the 25th column
 
     return matrix
+
 
 
 # Insert corrected altitude for a file at the last column
@@ -402,7 +397,8 @@ def load_files(departures_file, flights_file):
     return loaded_departures, loaded_flights
 
 def calculate_min_distance_to_TMR_40_24L_global(loaded_departures,loaded_flights):
-    trajectories = get_trajectory_for_airplane(loaded_departures, loaded_flights)
+    corrected_alitude_matrix = correct_altitude_for_file(loaded_flights)    
+    trajectories = get_trajectory_for_airplane(loaded_departures, corrected_alitude_matrix)
     filtered_trajectories = filter_empty_trajectories(trajectories)
     stereographical_trajectories = trajectories_to_stereographical(filtered_trajectories)
     departures_6R, departures_24L = filter_departures_by_runway(
