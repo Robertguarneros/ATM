@@ -226,7 +226,43 @@ def get_trajectory_for_airplane(loaded_departures, loaded_flights):
     h_index = loaded_flights[0].index('H')
 
 
+def filter_departures_by_runway(departures_matrix, flights_matrix):
+    # Get the header row for each matrix
+    departures_header = departures_matrix[0]
+    flights_header = flights_matrix[0]
 
+    # Find the index of relevant columns in the departures matrix
+    pista_desp_index = departures_header.index('PistaDesp')
+    indicativo_index = departures_header.index('Indicativo')
+
+    # Find the index of relevant columns in the flights matrix
+    ta_index = flights_header.index('TI')
+
+    # Filter departures by runway 6R
+    departures_6R = [
+        row[indicativo_index] for row in departures_matrix[1:] 
+        if row[pista_desp_index] == 'LEBL-06R'
+    ]
+        
+    matching_departures_6R = [
+        indicativo for indicativo in departures_6R 
+        if any(indicativo == row[ta_index] for row in flights_matrix[1:])
+    ]
+    print("Matching departures 6R with CSV:", matching_departures_6R)
+    
+    # Filter departures by runway 24L
+    departures_24L = [
+        row[indicativo_index] for row in departures_matrix[1:] 
+        if row[pista_desp_index] == 'LEBL-24L'
+    ]
+    
+    matching_departures_24L = [
+        indicativo for indicativo in departures_24L 
+        if any(indicativo == row[ta_index] for row in flights_matrix[1:])
+    ]
+    print("Matching departures 24L with CSV:", matching_departures_24L)
+    
+    return matching_departures_6R, matching_departures_24L
 
 
 
@@ -240,3 +276,5 @@ loaded_flights = load_flights(file_path2)
 corrected_alitude_matrix = correct_altitude_for_file(loaded_flights)
 
 get_trajectory_for_airplane(loaded_departures, loaded_flights)
+
+filter_departures_by_runway(loaded_departures, loaded_flights)
