@@ -305,7 +305,37 @@ def filter_departures_by_runway(departures_matrix, flights_matrix):
     
     return matching_departures_6R, matching_departures_24L
 
+def trajectories_to_stereographical(filtered_trajectories):
+    # Initialize the new dictionary for stereographical coordinates
+    stereographical_trajectories = {}
 
+    # Iterate through each flight and its trajectory points
+    for flight_id, points in filtered_trajectories.items():
+        stereographical_points = []
+        for point in points:
+            # Extract latitude, longitude, and height from the trajectory point
+            lat = float(point['latitude'])
+            lon = float(point['longitude'])
+            alt = float(point['height'])
+            
+            # Convert to stereographical coordinates
+            res = get_stereographical_from_lat_lon_alt(lat, lon, alt)
+            
+            # Append the transformed point to the flight's trajectory
+            stereographical_points.append({
+                "U": res["U"],
+                "V": res["V"],
+                #"Height": res["Height"]
+            })
+        
+        # Store the transformed trajectory for this flight
+        stereographical_trajectories[flight_id] = stereographical_points
+
+    return stereographical_trajectories
+
+
+def calculate_min_distance_to_TMR_40():
+    pass 
 
 
 file_path = 'assets/InputFiles/2305_02_dep_lebl.xlsx'
@@ -318,5 +348,9 @@ corrected_alitude_matrix = correct_altitude_for_file(loaded_flights)
 
 trajectories = get_trajectory_for_airplane(loaded_departures, loaded_flights)
 filtered_trajectories = filter_empty_trajectories(trajectories)
+stereographical_trajectories = trajectories_to_stereographical(filtered_trajectories)
+
+print(stereographical_trajectories["SWN5LC"])
+
 
 departures_6R, departures_24L = filter_departures_by_runway(loaded_departures, loaded_flights)
