@@ -285,39 +285,30 @@ def filter_departures_by_runway(departures_matrix, flights_matrix):
     flights_header = flights_matrix[0]
 
     # Find the index of relevant columns in the departures matrix
-    pista_desp_index = departures_header.index("PistaDesp")
-    indicativo_index = departures_header.index("Indicativo")
+    pista_desp_index = departures_header.index('PistaDesp')
+    indicativo_index = departures_header.index('Indicativo')
 
     # Find the index of relevant columns in the flights matrix
-    ta_index = flights_header.index("TI")
+    ta_index = flights_header.index('TI')
 
-    # Filter departures by runway 6R
-    departures_6R = [
-        row[indicativo_index]
-        for row in departures_matrix[1:]
-        if row[pista_desp_index] == "LEBL-06R"
-    ]
+    # Create a set of all flight identifiers (TI) for quick lookup
+    flight_ti_set = {row[ta_index] for row in flights_matrix[1:]}
 
-    matching_departures_6R = [
-        indicativo
-        for indicativo in departures_6R
-        if any(indicativo == row[ta_index] for row in flights_matrix[1:])
-    ]
-    # print("Matching departures 6R with CSV:", matching_departures_6R)
+    # Initialize lists to store matching departures
+    matching_departures_6R = []
+    matching_departures_24L = []
 
-    # Filter departures by runway 24L
-    departures_24L = [
-        row[indicativo_index]
-        for row in departures_matrix[1:]
-        if row[pista_desp_index] == "LEBL-24L"
-    ]
+    # Process the departures matrix once
+    for row in departures_matrix[1:]:
+        indicativo = row[indicativo_index]
+        pista_desp = row[pista_desp_index]
 
-    matching_departures_24L = [
-        indicativo
-        for indicativo in departures_24L
-        if any(indicativo == row[ta_index] for row in flights_matrix[1:])
-    ]
-    # print("Matching departures 24L with CSV:", matching_departures_24L)
+        # Check if the flight matches a TI in the flights matrix
+        if indicativo in flight_ti_set:
+            if pista_desp == 'LEBL-06R':
+                matching_departures_6R.append(indicativo)
+            elif pista_desp == 'LEBL-24L':
+                matching_departures_24L.append(indicativo)
 
     return matching_departures_6R, matching_departures_24L
 
@@ -406,3 +397,57 @@ def calculate_min_distance_to_TMR_40_24L_global(loaded_departures,loaded_flights
     )
     minimum_distances = calculate_min_distance_to_TMR_40_24L(stereographical_trajectories, departures_24L)
     return minimum_distances # Returns a dictionary with the flight identifier and the minimum distance in NM
+
+def detect_turn_start_from_runway_24L(matrix, departures24L):
+    # Identify the indices of relevant columns
+    header = matrix[0]
+    ra_idx = header.index('RA')  # Roll Angle
+    heading_idx = header.index('HEADING')  # Heading
+    tta_idx = header.index('TTA')  # True Track Angle
+    ti_idx = header.index('TI')  # Aircraft Identifier
+    lat_idx = header.index('LAT')
+    lon_idx = header.index('LON')
+    alt_idx = header.index('CorrectedAltitude')
+
+
+    # Group rows by aircraft ID (TI)
+    aircraft_data = {}
+    for row in matrix[1:]:
+        aircraft_id = row[ti_idx]
+        if aircraft_id not in aircraft_data:
+            aircraft_data[aircraft_id] = []
+        aircraft_data[aircraft_id].append(row)
+
+    # Dictionary to store the detected turn start for each aircraft
+    aircraft_turns = {}
+
+    # Process each aircraft separately
+    for aircraft_id, rows in aircraft_data.items():
+        if aircraft_id in departures24L:  # Ensure this aircraft is in departures from 24L
+            for i in range(len(rows) - 1):
+                # Get the current and next row for this aircraft
+                current_row = rows[i]
+                next_row = rows[i + 1]
+
+                # Convert relevant values to numbers (handle "N/A")
+                try:
+                    ra_current = float(current_row[ra_idx].replace(',', '.')) if current_row[ra_idx] != 'N/A' else 0
+                    ra_next = float(next_row[ra_idx].replace(',', '.')) if next_row[ra_idx] != 'N/A' else 0
+                    heading_current = float(current_row[heading_idx].replace(',', '.'))
+                    heading_next = float(next_row[heading_idx].replace(',', '.'))
+                    tta_current = float(current_row[tta_idx].replace(',', '.')) if current_row[tta_idx] != 'N/A' else 0
+                    tta_next = float(next_row[tta_idx].replace(',', '.')) if next_row[tta_idx] != 'N/A' else 0
+                except ValueError:
+                    continue
+
+                # Detect the start of the turn based on significant heading changes
+                if abs(ra_next - ra_current) > 2 or abs(heading_next - heading_current) > 5:
+                    # Record the turn start with TI, LAT, and LON
+                    lat = current_row[lat_idx]
+                    lon = current_row[lon_idx]
+                    alt = current_row[alt_idx]
+                    aircraft_turns[aircraft_id] = (aircraft_id, lat, lon, alt)
+                    break  # Exit loop after detecting the first turn for this aircraft
+
+    # Return the vector with the results
+    return [info for info in aircraft_turns.values() if info is not None]
