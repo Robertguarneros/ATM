@@ -22,7 +22,17 @@
 
 ### 3 Roberto 
 - Mirar las coordenadas del threshold de cada pista
-- Altitude corrected and velocity of traffic at threshold when departing at 24L and 06R
+- Altitude corrected and IAS of traffic at threshold when departing at 24L and 06R
+    - Conversion with 
+'''python
+def dms_to_decimal(degrees, minutes, seconds, direction):
+    decimal = degrees + (minutes / 60) + (seconds / 3600)
+    if direction in ['S', 'W']:
+        decimal = -decimal
+    return decimal
+'''
+    - 06R 411656.32N, 0020427.66E Latitude: 41.28231111111111, Longitude: 2.0743500000000004
+    - 24L 411731.99N, 0020611.81E Latitude: 41.29221944444444, Longitude: 2.1032805555555556
 - Horizontal distance stereographical from departures to TMR-40 (41,27194444440, 2,04777777778) por 24L
 
 
