@@ -417,3 +417,13 @@ def filter_trajectories_by_runway(stereographical_trajectories, departures_24L, 
     return filtered_trajectories_024L, filtered_trajectories_06R
 
 
+# Idea:
+# Interpolate the flight trajectories to every second instead of every 4 seconds
+# Set a threshold
+# Check for every flight, the time at which it crosses said threshold
+# Record the callsign, IAS and corrected altitude at that time for that flight
+# Store them in a vector, one for 24L and one for 06R 
+# Keep in mind some flights will never appear due to turning earlier
+# Keep in mind the percentage of flights that cross and dont cross over the total flights in the vector
+# Show data as distribution by time, type of aircraft, SID, company, etc.
+# Show statistics
