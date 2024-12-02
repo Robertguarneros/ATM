@@ -280,6 +280,7 @@ def filter_empty_trajectories(trajectories):
 
 
 def filter_departures_by_runway(departures_matrix, flights_matrix):
+    # Returns a list of TIs corresponding to a runway
     # Get the header row for each matrix
     departures_header = departures_matrix[0]
     flights_header = flights_matrix[0]
@@ -397,5 +398,22 @@ def calculate_min_distance_to_TMR_40_24L_global(loaded_departures,loaded_flights
     )
     minimum_distances = calculate_min_distance_to_TMR_40_24L(stereographical_trajectories, departures_24L)
     return minimum_distances # Returns a dictionary with the flight identifier and the minimum distance in NM
+
+
+def filter_trajectories_by_runway(stereographical_trajectories, departures_24L, departures_6R):
+    # Returns two list, one for each runway contaning the flight and the respective trajectories.
+    # Filter trajectories for flights in departures_24L
+    filtered_trajectories_024L = {
+        flight_id: points
+        for flight_id, points in stereographical_trajectories.items()
+        if flight_id in departures_24L
+    }
+     # Filter trajectories for flights in departures_06R
+    filtered_trajectories_06R = {
+        flight_id: points
+        for flight_id, points in stereographical_trajectories.items()
+        if flight_id in departures_6R
+    }
+    return filtered_trajectories_024L, filtered_trajectories_06R
 
 
