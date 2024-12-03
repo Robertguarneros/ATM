@@ -234,6 +234,7 @@ def get_trajectory_for_airplane(loaded_departures, loaded_flights):
     lon_index = loaded_flights[0].index("LON")
     h_index = loaded_flights[0].index("H")
     corrected_altitude_index = loaded_flights[0].index("CorrectedAltitude")
+    ias_index = loaded_flights[0].index("IAS")
 
     # Extract all unique flight identifiers from departures
     flight_identifiers = set(row[indicativo_index] for row in loaded_departures[1:])
@@ -254,6 +255,7 @@ def get_trajectory_for_airplane(loaded_departures, loaded_flights):
             lon = row[lon_index]
             h = row[h_index]
             corrected_altitude = row[corrected_altitude_index]
+            ias = row[ias_index]
 
             # Save the data for the trajectory
             trajectories[flight_identifier].append(
@@ -263,6 +265,7 @@ def get_trajectory_for_airplane(loaded_departures, loaded_flights):
                     "longitude": lon,
                     "height": h,
                     "corrected_altitude": corrected_altitude,
+                    "IAS": ias,
                 }
             )
 
@@ -417,8 +420,57 @@ def filter_trajectories_by_runway(stereographical_trajectories, departures_24L, 
     return filtered_trajectories_024L, filtered_trajectories_06R
 
 
-# Idea:
-# Interpolate the flight trajectories to every second instead of every 4 seconds
+def interpolate_trajectories(filtered_trajectories):
+    """
+    Interpolate flight trajectories to every second instead of every 4 seconds, including corrected altitude.
+
+    Args:
+        filtered_trajectories (dict): A dictionary where keys are flight IDs and
+                                      values are lists of trajectory points with time, latitude,
+                                      longitude, height, and corrected altitude.
+
+    Returns:
+        dict: A dictionary where keys are flight IDs and values are interpolated trajectory points.
+    """
+    interpolated_trajectories = {}
+
+    for flight_id, points in filtered_trajectories.items():
+        if len(points) < 2:
+            # Skip flights with less than 2 points (cannot interpolate)
+            continue
+
+        # Extract original times and trajectory values
+        original_times = np.array([float(point["time"]) for point in points])
+        latitudes = np.array([float(point["latitude"]) for point in points])
+        longitudes = np.array([float(point["longitude"]) for point in points])
+        altitudes = np.array([float(point["height"]) for point in points])
+        corrected_altitudes = np.array([float(point["corrected_altitude"]) for point in points])
+
+        # Create new time range (1-second intervals)
+        interpolated_times = np.arange(original_times[0], original_times[-1] + 1, 1)
+
+        # Interpolate latitude, longitude, altitude, and corrected altitude
+        interpolated_latitudes = np.interp(interpolated_times, original_times, latitudes)
+        interpolated_longitudes = np.interp(interpolated_times, original_times, longitudes)
+        interpolated_altitudes = np.interp(interpolated_times, original_times, altitudes)
+        interpolated_corrected_altitudes = np.interp(interpolated_times, original_times, corrected_altitudes)
+
+        # Create interpolated trajectory points
+        interpolated_points = []
+        for i, t in enumerate(interpolated_times):
+            interpolated_points.append({
+                "time": t,
+                "latitude": interpolated_latitudes[i],
+                "longitude": interpolated_longitudes[i],
+                "height": interpolated_altitudes[i],
+                "corrected_altitude": interpolated_corrected_altitudes[i]
+            })
+
+        # Store the interpolated trajectory for this flight
+        interpolated_trajectories[flight_id] = interpolated_points
+
+    return interpolated_trajectories
+
 # Set a threshold
 # Check for every flight, the time at which it crosses said threshold
 # Record the callsign, IAS and corrected altitude at that time for that flight
@@ -427,3 +479,19 @@ def filter_trajectories_by_runway(stereographical_trajectories, departures_24L, 
 # Keep in mind the percentage of flights that cross and dont cross over the total flights in the vector
 # Show data as distribution by time, type of aircraft, SID, company, etc.
 # Show statistics
+
+
+# def get_corrected_altitude_and_ias_at_threshold(interpolated_trajectories_024L, interpolated_trajectories_06R):
+#     # Set threshold 
+
+
+def interpolate_trajectories_global(loaded_departures,loaded_flights):
+    corrected_alitude_matrix = correct_altitude_for_file(loaded_flights)    
+    trajectories = get_trajectory_for_airplane(loaded_departures, corrected_alitude_matrix)
+    filtered_trajectories = filter_empty_trajectories(trajectories)
+    departures_6R, departures_24L = filter_departures_by_runway(
+        loaded_departures, loaded_flights
+    )
+    filtered_trajectories_024L, filtered_trajectories_06R = filter_trajectories_by_runway(filtered_trajectories, departures_24L, departures_6R)
+    interpolated_trajectories = interpolate_trajectories(filtered_trajectories_024L)
+    return interpolated_trajectories, filtered_trajectories_024L

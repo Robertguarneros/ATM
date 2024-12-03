@@ -2,6 +2,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 from functions import load_files, calculate_min_distance_to_TMR_40_24L_global
+from functionsRoberto import interpolate_trajectories_global
 
 st.set_page_config(
     page_title="ATM Project",
@@ -50,3 +51,4 @@ if departures_file and flights_file:
     )
 
     st.altair_chart(chart)
+
