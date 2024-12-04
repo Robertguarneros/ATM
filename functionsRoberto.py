@@ -541,6 +541,7 @@ def get_corrected_altitude_and_ias_at_threshold(interpolated_trajectories_024L, 
 
             if is_within_area(lat, lon, threshold_24L_area):
                 results["24L"].append({
+                    "time": point["time"],
                     "flight_id": flight_id,
                     "corrected_altitude": point["corrected_altitude"],
                     "ias": point["ias"]
@@ -554,6 +555,7 @@ def get_corrected_altitude_and_ias_at_threshold(interpolated_trajectories_024L, 
 
             if is_within_area(lat, lon, threshold_06R_area):
                 results["06R"].append({
+                    "time": point["time"],
                     "flight_id": flight_id,
                     "corrected_altitude": point["corrected_altitude"],
                     "ias": point["ias"]
