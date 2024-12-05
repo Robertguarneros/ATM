@@ -1,3 +1,50 @@
+import csv
+
+import numpy as np
+import pandas as pd
+
+# Load DEP file
+def load_departures(file_path):
+    df = pd.read_excel(file_path)
+
+    # Include the header row in the matrix
+    matrix = [df.columns.tolist()] + df.values.tolist()
+
+    # Return the matrix created
+    return matrix
+
+
+
+# Load flight data
+def load_flights(file_path):
+    # Open the CSV file
+    with open(file_path, 'r', encoding='utf-8') as csvfile:
+        reader = csv.reader(csvfile, delimiter=';')
+        
+        # Generate a matrix by reading all rows
+        matrix = []
+        for row in reader:
+            # Replace commas with dots, excluding column 23, and replace 'NV' with 'N/A'
+            processed_row = [
+                cell.replace(',', '.').replace('NV', 'N/A') if ',' in cell and i != 23 else cell.replace('NV', 'N/A')
+                for i, cell in enumerate(row)
+            ]
+            matrix.append(processed_row)
+        
+        # Remove the 25th column (index 24) from each row
+        for row in matrix:
+            if len(row) > 24:  # Ensure row has at least 25 columns
+                del row[24]  # Remove the 25th column
+
+    return matrix
+
+
+def load_files(departures_file, flights_file):
+    loaded_departures = load_departures(departures_file)
+    loaded_flights = load_flights(flights_file)
+    return loaded_departures, loaded_flights
+
+
 def corrected_altitude(BarometricPressureSetting, FlightLevel):
     altitude_in_feet_corrected = 0
     if BarometricPressureSetting != "N/A":
