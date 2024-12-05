@@ -2,15 +2,10 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 from functionsRoberto import get_corrected_altitude_and_ias_at_threshold_global, calculate_min_distance_to_TMR_40_24L_global, load_files
-import os
 
-# Correct the file paths for use on the Streamlit server
-current_dir = os.path.dirname(__file__)
-departures_file_path = os.path.join(current_dir, "assets/InputFiles/2305_02_dep_lebl.xlsx")
-flights_file_path = os.path.join(current_dir, "assets/CsvFiles/P3_04_08h.csv")
 
-loaded_departures, loaded_flights = load_files(departures_file_path, flights_file_path)
-
+# File uploader for departures file
+loaded_departures, loaded_flights = load_files("assets/InputFiles/2305_02_dep_lebl.xlsx", "assets/CsvFiles/P3_04_08h.csv")
 minimum_distances = calculate_min_distance_to_TMR_40_24L_global(loaded_departures, loaded_flights)
 
 # Display the minimum distances
