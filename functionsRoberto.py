@@ -163,42 +163,37 @@ def calculate_distance(U1, V1, U2, V2):
 
 
 # Load DEP file
-def load_departures(file_obj):
-    """
-    Load departures data from a file-like object (e.g., UploadedFile from Streamlit).
-    """
-    # Read the Excel file directly from the file-like object
-    df = pd.read_excel(file_obj)
+def load_departures(file_path):
+    df = pd.read_excel(file_path)
 
     # Include the header row in the matrix
     matrix = [df.columns.tolist()] + df.values.tolist()
 
+    # Return the matrix created
     return matrix
 
 
 
 # Load flight data
-def load_flights(file_obj):
-    """
-    Load flight data from a file-like object (e.g., UploadedFile from Streamlit).
-    """
-    # Open the file-like object directly
-    reader = csv.reader(file_obj.read().decode("utf-8").splitlines(), delimiter=";")
-    
-    # Generate a matrix by reading all rows
-    matrix = []
-    for row in reader:
-        # Replace commas with dots, excluding column 23, and replace 'NV' with 'N/A'
-        processed_row = [
-            cell.replace(",", ".").replace("NV", "N/A") if "," in cell and i != 23 else cell.replace("NV", "N/A")
-            for i, cell in enumerate(row)
-        ]
-        matrix.append(processed_row)
-    
-    # Remove the 25th column (index 24) from each row
-    for row in matrix:
-        if len(row) > 24:  # Ensure row has at least 25 columns
-            del row[24]  # Remove the 25th column
+def load_flights(file_path):
+    # Open the CSV file
+    with open(file_path, 'r', encoding='utf-8') as csvfile:
+        reader = csv.reader(csvfile, delimiter=';')
+        
+        # Generate a matrix by reading all rows
+        matrix = []
+        for row in reader:
+            # Replace commas with dots, excluding column 23, and replace 'NV' with 'N/A'
+            processed_row = [
+                cell.replace(',', '.').replace('NV', 'N/A') if ',' in cell and i != 23 else cell.replace('NV', 'N/A')
+                for i, cell in enumerate(row)
+            ]
+            matrix.append(processed_row)
+        
+        # Remove the 25th column (index 24) from each row
+        for row in matrix:
+            if len(row) > 24:  # Ensure row has at least 25 columns
+                del row[24]  # Remove the 25th column
 
     return matrix
 

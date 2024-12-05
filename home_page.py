@@ -1,4 +1,5 @@
 import streamlit as st
+import altair as alt
 
 # Streamlit page configuration
 st.set_page_config(
@@ -10,3 +11,4 @@ st.set_page_config(
 
 st.title("Welcome to the ATM Project!")
 st.write("Use the sidebar to navigate to different sections.")
+alt.themes.enable("dark")
