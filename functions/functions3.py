@@ -197,6 +197,41 @@ def load_flights(file_path):
 
     return matrix
 
+# Load flight data
+import csv
+
+# Load flight data
+def load_24h(file1, file2, file3, file4, file5, file6):
+    # Initialize an empty matrix to hold all data
+    matrix = []
+    first_file = True  # Flag to indicate if it's the first file being processed
+
+    for file in [file1, file2, file3, file4, file5, file6]:
+        with open(file, 'r', encoding='utf-8') as csvfile:
+            reader = csv.reader(csvfile, delimiter=';')
+            
+            # Skip the header for all files except the first
+            if not first_file:
+                next(reader, None)  # Skip the header row
+            else:
+                first_file = False  # Ensure subsequent files skip the header
+
+            # Generate a matrix by reading all rows
+            for row in reader:
+                # Replace commas with dots, excluding column 23, and replace 'NV' with 'N/A'
+                processed_row = [
+                    cell.replace(',', '.').replace('NV', 'N/A') if ',' in cell and i != 23 else cell.replace('NV', 'N/A')
+                    for i, cell in enumerate(row)
+                ]
+                matrix.append(processed_row)
+            
+            # Remove the 25th column (index 24) from each row
+            for row in matrix:
+                if len(row) > 24:  # Ensure row has at least 25 columns
+                    del row[24]  # Remove the 25th column
+
+    return matrix
+
 
 
 # Insert corrected altitude for a file at the last column
