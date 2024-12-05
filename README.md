@@ -4,12 +4,10 @@
 ## Project Structure
 ```
 ATM/
-│   .flake8 
+│   .DS_Store
+│   .flake8
 │   .gitignore
-│   angela.py
-│   David.py
-│   functionsRoberto.py
-│   home_page.py //app entry point and main page
+│   home_page.py
 │   project.toml
 │   README.md
 │   requirements.txt
@@ -31,6 +29,11 @@ ATM/
 │           Tabla_Clasificacion_aeronaves.xlsx
 │           Tabla_misma_SID_06R.xlsx
 │           Tabla_misma_SID_24L.xlsx
+│
+├───functions
+│       functions1.py
+│       functions2.py
+│       functions3.py
 │
 ├───pages
 │       Altitude_and_IAS_at_runway_threshold.py

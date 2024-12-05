@@ -1,13 +1,13 @@
 import altair as alt
 import pandas as pd
 import streamlit as st
-from functionsRoberto import get_corrected_altitude_and_ias_at_threshold_global, calculate_min_distance_to_TMR_40_24L_global, load_files
+from functions.functions3 import get_corrected_altitude_and_ias_at_threshold_global, calculate_min_distance_to_TMR_40_24L_global, load_files, load_flights
 
 
 # File uploader for departures file
-loaded_departures, loaded_flights = load_files("assets/InputFiles/2305_02_dep_lebl.xlsx", "assets/CsvFiles/P3_04_08h.csv")
-minimum_distances = calculate_min_distance_to_TMR_40_24L_global(loaded_departures, loaded_flights)
-
+loaded_departures, loaded_flights_00_04 = load_files("assets/InputFiles/2305_02_dep_lebl.xlsx", "assets/CsvFiles/P3_00_04h.csv")
+minimum_distances = calculate_min_distance_to_TMR_40_24L_global(loaded_departures, loaded_flights_00_04)
+loaded_flights_04_08 = load_flights("assets/CsvFiles/P3_04_08h.csv")
 # Display the minimum distances
 st.write("Minimum Distances:", minimum_distances)
 
@@ -32,5 +32,5 @@ chart = alt.Chart(df).mark_line().encode(
 
 st.altair_chart(chart)
 
-results = get_corrected_altitude_and_ias_at_threshold_global(loaded_departures, loaded_flights)
+results = get_corrected_altitude_and_ias_at_threshold_global(loaded_departures, loaded_flights_00_04)
 st.write("Results:", results)
