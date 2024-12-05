@@ -5,7 +5,7 @@ from functionsRoberto import get_corrected_altitude_and_ias_at_threshold_global,
 
 
 # File uploader for departures file
-loaded_departures, loaded_flights = load_files("assets\InputFiles\2305_02_dep_lebl.xlsx", "assets\CsvFiles\P3_04_08h.csv")
+loaded_departures, loaded_flights = load_files("assets/InputFiles/2305_02_dep_lebl.xlsx", "assets/CsvFiles/P3_04_08h.csv")
 minimum_distances = calculate_min_distance_to_TMR_40_24L_global(loaded_departures, loaded_flights)
 
 # Display the minimum distances
