@@ -163,16 +163,13 @@ def calculate_distance(U1, V1, U2, V2):
 
 
 # Load DEP file
-def load_departures(file_obj):
-    """
-    Load departures data from a file-like object (e.g., UploadedFile from Streamlit).
-    """
-    # Read the Excel file directly from the file-like object
-    df = pd.read_excel(file_obj)
+def load_departures(file_path):
+    df = pd.read_excel(file_path)
 
     # Include the header row in the matrix
     matrix = [df.columns.tolist()] + df.values.tolist()
 
+    # Return the matrix created
     return matrix
 
 
