@@ -366,6 +366,7 @@ def trajectories_to_stereographical(filtered_trajectories):
             lat = float(point["latitude"])
             lon = float(point["longitude"])
             alt = float(point["height"])
+            time = point["time"]
 
             # Convert to stereographical coordinates
             res = get_stereographical_from_lat_lon_alt(lat, lon, alt)
@@ -375,6 +376,7 @@ def trajectories_to_stereographical(filtered_trajectories):
                 {
                     "U": float(res["U"]),
                     "V": float(res["V"]),
+                    "time": time,
                     # "Height": res["Height"]
                 }
             )
@@ -387,15 +389,17 @@ def trajectories_to_stereographical(filtered_trajectories):
 
 def calculate_min_distance_to_TMR_40_24L(stereographical_trajectories, departures_24L):
     """
-    Calculate the minimum distance to TMR-40 for flights departing from 24L.
+    Calculate the minimum distance to TMR-40 for flights departing from 24L and include the time of the minimum distance.
 
     Args:
         stereographical_trajectories (dict): A dictionary where keys are flight IDs and
-                                             values are lists of (U, V) trajectory points.
+                                             values are lists of trajectory points, each containing
+                                             'U', 'V', and 'time'.
         departures_24L (list): A list of flight IDs departing from 24L.
 
     Returns:
-        dict: A dictionary where keys are flight IDs and values are the minimum distance to TMR-40.
+        dict: A dictionary where keys are flight IDs and values are tuples of
+              (minimum distance to TMR-40, time of minimum distance).
     """
     # Stereographical coordinates of TMR-40
     TMR_U = 68775.90421516102
@@ -408,19 +412,23 @@ def calculate_min_distance_to_TMR_40_24L(stereographical_trajectories, departure
         if flight_id in departures_24L
     }
 
-    # Dictionary to store the minimum distances
+    # Dictionary to store the minimum distances and their corresponding times
     min_distances = {}
 
     # Calculate the minimum distance for each filtered trajectory
     for flight_id, trajectory_points in filtered_trajectories.items():
-        distances = [
-            calculate_distance(float(point["U"]), float(point["V"]), TMR_U, TMR_V)
+        # Calculate distances and keep track of times
+        distances_and_times = [
+            (calculate_distance(float(point["U"]), float(point["V"]), TMR_U, TMR_V), point["time"])
             for point in trajectory_points
         ]
-        # Store the minimum distance
-        min_distances[flight_id] = min(distances)
+        # Find the point with the minimum distance
+        min_distance, min_time = min(distances_and_times, key=lambda x: x[0])
+        # Store the minimum distance and time in the dictionary
+        min_distances[flight_id] = (min_distance, min_time)
 
-    return min_distances  # In nautical miles
+    return min_distances  # Minimum distances in nautical miles, times as strings or timestamps
+
 
 
 def load_files(departures_file, flights_file):
