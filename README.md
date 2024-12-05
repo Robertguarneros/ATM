@@ -1,5 +1,46 @@
 # ATM Project
 [Click here to use the app](https://atmapp.streamlit.app/)
+
+## Project Structure
+```
+ATM/
+│   .flake8 
+│   .gitignore
+│   angela.py
+│   David.py
+│   functionsRoberto.py
+│   home_page.py //app entry point and main page
+│   project.toml
+│   README.md
+│   requirements.txt
+│   
+├───assets
+│   │   .DS_Store
+│   │   logo_eurocontrol.png
+│   │
+│   ├───CsvFiles
+│   │       P3_00-04h.csv
+│   │       P3_04_08h.csv
+│   │       P3_08_12h.csv
+│   │       P3_12_16h.csv
+│   │       P3_16_20h.csv
+│   │       P3_20_24h.csv
+│   │
+│   └───InputFiles
+│           2305_02_dep_lebl.xlsx
+│           Tabla_Clasificacion_aeronaves.xlsx
+│           Tabla_misma_SID_06R.xlsx
+│           Tabla_misma_SID_24L.xlsx
+│
+├───pages
+│       Altitude_and_IAS_at_runway_threshold.py
+│       Horizontal_Distance_to_TMR-40.py
+│       IAS_at_different_Altitudes.py
+│       Position_and_Altitude_when_Turning.py
+│       Radial_Crossing.py
+│       Separation_Losses.py
+```
+
 ## Objectives
 
 ### 1 David
