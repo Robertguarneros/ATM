@@ -1,8 +1,6 @@
 # Son los q me ha dicho GPT si hay otros mejores se cambia
-import tkinter as tk
 from datetime import timedelta
-from tkinter import filedialog
-
+import csv
 import pandas as pd
 import numpy as np
 
@@ -39,14 +37,10 @@ def calculate_translation_matrix(lat, lon, alt):
     return np.array([tx, ty, tz])
 
 
-def geodesic_to_geocentric(lat_in, lon_in, alt_in):
+def geodesic_to_geocentric(lat, lon, alt):
     """
     Converts geodetic coordinates (latitude, longitude, height) to geocentric (x, y, z).
     """
-
-    lat = float(lat_in.replace(",", ".")),
-    lon = float(lon_in.replace(",", ".")),
-    alt = float(alt_in.replace(",", "."))
 
     lat_rad = np.radians(lat)
     lon_rad = np.radians(lon)
@@ -143,14 +137,170 @@ def get_stereographical_from_lat_lon_alt(lat, lon, alt):
     )
     return stereographical_coords
 
+
+def corrected_altitude(BarometricPressureSetting, FlightLevel):
+    altitude_in_feet_corrected = 0
+    if BarometricPressureSetting != "N/A":
+        QNH_actual = float(BarometricPressureSetting)
+        QNH_standard = 1013.2
+        if float(FlightLevel) < 60:
+            if 1013 <= QNH_actual <= 1013.3:
+                altitude_in_feet_corrected = float(FlightLevel) * 100
+            else:
+                altitude_in_feet_corrected = (
+                    float(float(FlightLevel) * 100) + (QNH_actual - QNH_standard) * 30
+                )
+                altitude_in_feet_corrected = round(altitude_in_feet_corrected, 2)
+        else:
+            altitude_in_feet_corrected = float(FlightLevel) * 100
+    return altitude_in_feet_corrected
+
+
 def calculate_distance(U1, V1, U2, V2):
     distance = (
         np.sqrt((U1 - U2) ** 2 + (V1 - V2) ** 2) / 1852
     )  # Return distance in nautical miles
     return distance
+    altitude_in_feet_corrected = 0
+    if BarometricPressureSetting != "N/A":
+        QNH_actual = float(BarometricPressureSetting)
+        QNH_standard = 1013.2
+        if float(FlightLevel) < 60:
+            if 1013 <= QNH_actual <= 1013.3:
+                altitude_in_feet_corrected = float(FlightLevel) * 100
+            else:
+                altitude_in_feet_corrected = (
+                    float(float(FlightLevel) * 100) + (QNH_actual - QNH_standard) * 30
+                )
+                altitude_in_feet_corrected = round(altitude_in_feet_corrected, 2)
+        else:
+            altitude_in_feet_corrected = float(FlightLevel) * 100
+    return altitude_in_feet_corrected
+
+# Insert corrected altitude for a file at the last column
+def correct_altitude_for_file(matrix):
+    # Add a column that has the corrected altitude
+    # Find the column indices for BP (Barometric Pressure) and FL (Flight Level)
+    bp_index = matrix[0].index("BP")
+    fl_index = matrix[0].index("FL")
+
+    # Check if "CorrectedAltitude" already exists in the header
+    if "CorrectedAltitude" not in matrix[0]:
+        matrix[0].append("CorrectedAltitude")  # Append the header for the corrected altitude
+
+    # Process each row (skip the header)
+    for row in matrix[1:]:
+        # Avoid appending if the corrected altitude is already present
+        if len(row) == len(matrix[0]):
+            continue  # Skip rows that already have the corrected altitude
+        barometric_pressure = row[bp_index]
+        flight_level = row[fl_index]
+        corrected_alt = corrected_altitude(barometric_pressure, flight_level)
+        row.append(corrected_alt)
+
+    return matrix
+
+# Load DEP file
+def load_departures():
+    """
+    Load departures data from a file-like object (e.g., UploadedFile from Streamlit).
+    """
+    # Read the Excel file directly from the file-like object
+    df = pd.read_excel("assets/InputFiles/2305_02_dep_lebl.xlsx")
+
+    # Include the header row in the matrix
+    matrix = [df.columns.tolist()] + df.values.tolist()
+
+    return matrix
+
+
+def load_flights(file_path):
+    # Open the CSV file
+    with open(file_path, 'r', encoding='utf-8') as csvfile:
+        reader = csv.reader(csvfile, delimiter=';')
+        
+        # Generate a matrix by reading all rows
+        matrix = []
+        for row in reader:
+            # Replace commas with dots, excluding column 23, and replace 'NV' with 'N/A'
+            processed_row = [
+                cell.replace(',', '.').replace('NV', 'N/A') if ',' in cell and i != 23 else cell.replace('NV', 'N/A')
+                for i, cell in enumerate(row)
+            ]
+            matrix.append(processed_row)
+        
+        # Remove the 25th column (index 24) from each row
+        for row in matrix:
+            if len(row) > 24:  # Ensure row has at least 25 columns
+                del row[24]  # Remove the 25th column
+
+    return matrix
+
+# Get trajectory for an airplane
+def get_trajectory_for_airplane(loaded_departures, loaded_flights):
+    # Find the relevant column indices
+    indicativo_index = loaded_departures[0].index("Indicativo")
+    ti_index = loaded_flights[0].index("TI")
+    time_index = loaded_flights[0].index("TIME(s)")
+    lat_index = loaded_flights[0].index("LAT")
+    lon_index = loaded_flights[0].index("LON")
+    h_index = loaded_flights[0].index("H")
+    corrected_altitude_index = loaded_flights[0].index("CorrectedAltitude")
+    ias_index = loaded_flights[0].index("IAS")
+
+    # Extract all unique flight identifiers from departures
+    flight_identifiers = set(row[indicativo_index] for row in loaded_departures[1:])
+
+    # Prepare the trajectory dictionary
+    trajectories = {flight: [] for flight in flight_identifiers}
+
+    # Iterate through flights to calculate the route
+    for row in loaded_flights[1:]:
+        # Get the current flight identifier (TI column)
+        flight_identifier = row[ti_index]
+
+        # Check if this flight identifier is in the departures
+        if flight_identifier in trajectories:
+            # Extract relevant data for this row
+            time = row[time_index]
+            lat = row[lat_index]
+            lon = row[lon_index]
+            h = row[h_index]
+            corrected_altitude = row[corrected_altitude_index]
+            ias = row[ias_index]
+
+            if ias != "N/A":
+                # Save the data for the trajectory
+                trajectories[flight_identifier].append(
+                    {
+                        "time": time,
+                        "latitude": lat,
+                        "longitude": lon,
+                        "height": h,
+                        "corrected_altitude": corrected_altitude,
+                        "ias": ias,
+                    }
+                )
+            
+
+    return trajectories
+
+
+def filter_empty_trajectories(trajectories):
+    # Create a new dictionary containing only flights with non-empty trajectories
+    filtered_trajectories = {
+        flight_id: points
+        for flight_id, points in trajectories.items()
+        if points  # Keep only if the points list is not empty
+    }
+    return filtered_trajectories
+
+
+import pandas as pd
+import re
+from datetime import timedelta
 
 def extract_contiguous_pairs():
-
     # Cargar el archivo
     df = pd.read_excel("assets/InputFiles/2305_02_dep_lebl.xlsx")
 
@@ -168,6 +318,12 @@ def extract_contiguous_pairs():
 
     # Lista para almacenar la información adicional
     flight_info_list = []
+
+    # Función para extraer la base de la SID (antes del número)
+    def extract_base_sid(sid):
+        # Usamos expresión regular para quitar los números al final de la SID
+        base_sid = re.match(r"([A-Za-z]+)", sid)  # Solo toma letras antes de cualquier número
+        return base_sid.group(0) if base_sid else sid  # Si no encuentra nada, devuelve la SID completa
 
     # Iterar sobre las filas para calcular diferencias entre vuelos consecutivos
     for i in range(len(df_sorted) - 1):
@@ -194,27 +350,33 @@ def extract_contiguous_pairs():
                     (current_flight["Indicativo"], next_flight["Indicativo"])
                 )
 
+        # Procesar la SID (ProcDesp) para eliminar el número y dejar solo el nombre base
+        base_sid = extract_base_sid(current_flight["ProcDesp"])
+
         # Añadir información adicional del vuelo a la lista
         flight_info_list.append({
             "Indicativo": current_flight["Indicativo"],
             "Estela": current_flight["Estela"],
             "TipoAeronave": current_flight["TipoAeronave"],
-            "ProcDesp": current_flight["ProcDesp"],
+            "ProcDesp": base_sid,  # Guardar solo el nombre base de la SID
         })
 
     # Incluir la información del último vuelo en la lista
     last_flight = df_sorted.iloc[-1]
+    base_sid_last = extract_base_sid(last_flight["ProcDesp"])  # Procesar la SID del último vuelo
     flight_info_list.append({
         "Indicativo": last_flight["Indicativo"],
         "Estela": last_flight["Estela"],
         "TipoAeronave": last_flight["TipoAeronave"],
-        "ProcDesp": last_flight["ProcDesp"],
+        "ProcDesp": base_sid_last,  # Guardar solo el nombre base de la SID
     })
 
     # Convertir la lista de información en un DataFrame
     flight_info = pd.DataFrame(flight_info_list)
 
     return contiguous_flights_24L, contiguous_flights_06R, flight_info
+
+
 
 def load_data_from_csv(file_path):
     """Carga datos del CSV y devuelve la lista de datos y cabeceras."""
@@ -224,16 +386,15 @@ def load_data_from_csv(file_path):
     return data, headers
     
 def compare_radar_separation(contiguous_flights_dist):
-
     radar_min_separation = 3  # Separación mínima Radar en NM
     results = []
     compliant_pairs = 0  # Contador de parejas que cumplen con el requisito
 
     # Iterar sobre las parejas y sus distancias mínimas
-    for pair, contiguous_flights_dist in contiguous_flights_dist.items():
+    for pair, distance in contiguous_flights_dist.items(): 
         # Verificar si cumple con la separación mínima del radar
-        is_compliant = contiguous_flights_dist > radar_min_separation
-        results.append((pair[0], pair[1], contiguous_flights_dist, is_compliant))
+        is_compliant = distance > radar_min_separation
+        results.append((pair[0], pair[1], distance, is_compliant))
 
         # Contar cuántas cumplen la condición
         if is_compliant:
@@ -244,6 +405,7 @@ def compare_radar_separation(contiguous_flights_dist):
     compliance_percentage = (compliant_pairs / total_pairs * 100) if total_pairs > 0 else 0
 
     return results, compliance_percentage
+
 
 def compare_wake_separation(contiguous_flights_dist, flight_info):
 
@@ -294,17 +456,31 @@ def compare_wake_separation(contiguous_flights_dist, flight_info):
     return results, compliance_percentage
 
 def compare_loa_separation(contiguous_flights_dist, flight_info):
-    """
-    Compara la separación LoA entre pares de vuelos y calcula el porcentaje de cumplimiento
-    según la distancia mínima calculada y las categorías de aeronave.
-    
-    Args:
-        contiguous_flights_dist (dict): Diccionario con las distancias mínimas calculadas por pareja.
-        flight_info (pd.DataFrame): DataFrame con la información de los vuelos, que contiene 'Indicativo', 'TipoAeronave', 'ProcDesp'.
-        
-    Returns:
-        tuple: Una lista con las parejas que cumplen o no con la separación mínima LoA y el porcentaje de cumplimiento.
-    """
+
+    # Cargar los archivos de SIDs agrupadas directamente como diccionarios
+    sid_24L_df = pd.read_excel("assets/InputFiles/Tabla_misma_SID_24L.xlsx")
+    sid_06R_df = pd.read_excel("assets/InputFiles/Tabla_misma_SID_06R.xlsx")
+
+    sid_groups_24L = {
+        sid.split('-')[0]: col  # Extraer la base de la SID y asignar el grupo
+        for col in sid_24L_df.columns
+        for sid in sid_24L_df[col].dropna()
+    }
+
+    sid_groups_06R = {
+        sid.split('-')[0]: col
+        for col in sid_06R_df.columns
+        for sid in sid_06R_df[col].dropna()
+    }
+
+    # Función para determinar si dos SIDs pertenecen al mismo grupo
+    def are_sids_in_same_group(sid1, sid2):
+        base1, base2 = sid1.split('-')[0], sid2.split('-')[0]
+        group1 = sid_groups_24L.get(base1) or sid_groups_06R.get(base1)
+        group2 = sid_groups_24L.get(base2) or sid_groups_06R.get(base2)
+        return group1 == group2 if group1 and group2 else False
+
+
     # Definir la tabla de separación LoA
     loa_separation = {
         ("HP", "HP", "Misma"): 5,
@@ -419,14 +595,16 @@ def compare_loa_separation(contiguous_flights_dist, flight_info):
         # Clasificar las aeronaves directamente
         category_1 = next((cat for cat, types in categories.items() if tipo_1 in types), "R")
         category_2 = next((cat for cat, types in categories.items() if tipo_2 in types), "R")
-        same_sid = "Misma" if sid_1 == sid_2 else "Distinta"
+
+        # Determinar si están en el mismo grupo de SID
+        same_sid = "Misma" if are_sids_in_same_group(sid_1, sid_2) else "Distinta"
 
         # Obtener la separación mínima de la tabla LoA
         separation_key = (category_1, category_2, same_sid)
         min_separation = loa_separation.get(separation_key, 3)
 
         # Verificar si la distancia mínima cumple con la separación
-        is_compliant = min_distance < min_separation
+        is_compliant = min_distance > min_separation
         if is_compliant:
             compliant_pairs += 1
 
@@ -439,89 +617,105 @@ def compare_loa_separation(contiguous_flights_dist, flight_info):
 
     return results, compliance_percentage
 
-# Función para seleccionar el archivo CSV
-def select_file():
-    root = tk.Tk()  # Crear una ventana raíz
-    root.withdraw()  # Ocultar la ventana raíz
-    file_path = filedialog.askopenfilename(title="Selecciona un archivo CSV", filetypes=[("CSV files", "*.csv")])  # Abrir el cuadro de diálogo
-    return file_path
 
-def calculate_min_distances(csv_file_path, contiguous_flights_06R): # añadir en caso de hacer os dos a la vez contiguous_flights_24L
-    # Leer el archivo CSV
-    df = pd.read_csv(csv_file_path, sep=';', na_values=['N/A'])
-    
-    # Convertir el DataFrame a una lista y obtener las cabeceras
-    data = list(df.values)
-    headers = df.columns.tolist()
+def calculate_min_distances(loaded_departures, loaded_flights, contiguous_flights_24L, contiguous_flights_06R):
+    """
+    Calcula las distancias mínimas entre pares de vuelos utilizando trayectorias procesadas.
+    """
+    # Obtener las trayectorias completas de los vuelos
+    trajectories = get_trajectory_for_airplane(loaded_departures, loaded_flights)
+    trajectories = filter_empty_trajectories(trajectories)  # Filtrar trayectorias vacías
 
-    # Establecer los índices de las columnas relevantes
-    lat_idx = headers.index("LAT")-1 # EL -1 ESTA POR Q SI NO LEE LA COLUMNA DE LA DERECHA
-    lon_idx = headers.index("LON")-1
-    ti_idx = headers.index("TI")-1
-    h_idx = headers.index("H")-1
+    # Definir las áreas de los umbrales como cajas delimitadoras
+    threshold_06R_area = {
+        "min_lat": 41.291979,  # Bottom latitude
+        "max_lat": 41.293154,  # Top latitude
+        "min_lon": 2.103089,   # Left longitude
+        "max_lon": 2.105704    # Right longitude
+    }
+    threshold_24L_area = {
+        "min_lat": 41.281430,  # Bottom latitude
+        "max_lat": 41.282578,  # Top latitude
+        "min_lon": 2.072046,   # Left longitude
+        "max_lon": 2.074564    # Right longitude
+    }
 
-    #results_24L = {}
+    results_24L = {}
     results_06R = {}
 
-    '''
-    EN CASO DE QUERER HACER LOS CALCULOS PARA LS DOS PISTAS A LA VEZ
+    # Función para verificar si un punto está dentro de un área
+    def is_within_area(lat, lon, area):
+        return (
+            area["min_lat"] <= lat <= area["max_lat"]
+            and area["min_lon"] <= lon <= area["max_lon"]
+        )
 
-    # Calcular las distancias mínimas para las parejas de la pista 24L
-    for pair in contiguous_flights_24L:
-        plane1, plane2 = pair
-        min_distance = float('inf')
-        found = False
-        
-        for row_1 in data:
-            if row_1[ti_idx] != plane1:
-                continue
-            for row_2 in data:
-                if row_2[ti_idx] != plane2:
-                    continue
-                
-                # Verificar condición para la pista 24L
-                if row_1[lon_idx] < '2,073776' and row_2[lon_idx] < '2.073776' and row_1[lat_idx] < '41,292008' and row_2[lat_idx] < '41,292008':
-                    coords_1 = get_stereographical_from_lat_lon_alt(row_1[lat_idx], row_1[lon_idx], row_1[h_idx])
-                    coords_2 = get_stereographical_from_lat_lon_alt(row_2[lat_idx], row_2[lon_idx], row_2[h_idx])
-                    dist = calculate_distance(coords_1['U'], coords_1['V'], coords_2['U'], coords_2['V']).item()
-                    min_distance = min(min_distance, dist)
-                    found = True
-        
-        if found and min_distance != float('inf'):
-            results_24L[pair] = min_distance
-    '''
-    # Calcular las distancias mínimas para las parejas de la pista 06R
-    for pair in contiguous_flights_06R:
-        plane1, plane2 = pair
-        min_distance = float('inf')
-        found = False
-        
-        for row_1 in data:
-            if row_1[ti_idx] != plane1:
-                continue
-            for row_2 in data:
-                if row_2[ti_idx] != plane2:
-                    continue
-                
-                # Verificar condición para la pista 06R
-                if row_1[lon_idx] > '2,103790' and row_2[lon_idx] > '2,103790' and row_1[lat_idx] < '41,292008' and row_2[lat_idx] < '41,292008':
-                    coords_1 = get_stereographical_from_lat_lon_alt(row_1[lat_idx], row_1[lon_idx], row_1[h_idx])
-                    coords_2 = get_stereographical_from_lat_lon_alt(row_2[lat_idx], row_2[lon_idx], row_2[h_idx])
-                    dist = calculate_distance(coords_1['U'], coords_1['V'], coords_2['U'], coords_2['V']).item()
-                    min_distance = min(min_distance, dist)
-                    found = True
-        
-        if found and min_distance != float('inf'):
-            results_06R[pair] = min_distance
+    # Calcular distancias mínimas para pares de vuelos en una pista
+    def calculate_distances_for_pairs(pairs, threshold_area, results):
+        for pair in pairs:
+            plane1, plane2 = pair
+            min_distance = float('inf')
+            found = False
 
-    return results_06R #, results_06R
+            # Obtener las trayectorias para ambos vuelos
+            traj1 = trajectories.get(plane1, [])
+            traj2 = trajectories.get(plane2, [])
+
+            # Indexar las trayectorias por tiempo para emparejarlas
+            traj1_by_time = {float(point['time']): point for point in traj1}
+            traj2_by_time = {float(point['time']): point for point in traj2}
+
+            # Buscar tiempos comunes
+            common_times = set(traj1_by_time.keys()) & set(traj2_by_time.keys())
+
+            for time in common_times:
+                point_1 = traj1_by_time[time]
+                point_2 = traj2_by_time[time]
+
+                # Convertir coordenadas y alturas a flotantes
+                lat_1, lon_1, h_1 = float(point_1['latitude']), float(point_1['longitude']), float(point_1['height'])
+                lat_2, lon_2, h_2 = float(point_2['latitude']), float(point_2['longitude']), float(point_2['height'])
+
+                # Ignorar si el segundo vuelo está dentro del área del umbral
+                if is_within_area(lat_2, lon_2, threshold_area):
+                    continue
+
+                # Calcular coordenadas estereográficas
+                coords_1 = get_stereographical_from_lat_lon_alt(lat_1, lon_1, h_1)
+                coords_2 = get_stereographical_from_lat_lon_alt(lat_2, lon_2, h_2)
+
+                # Calcular distancia
+                dist = calculate_distance(
+                    coords_1['U'], coords_1['V'], coords_2['U'], coords_2['V']
+                ).item()
+
+                min_distance = min(min_distance, dist)
+                found = True
+
+            if found and min_distance != float('inf'):
+                results[pair] = min_distance
+
+    # Procesar cada conjunto de vuelos para las pistas
+    calculate_distances_for_pairs(contiguous_flights_24L, threshold_24L_area, results_24L)
+    calculate_distances_for_pairs(contiguous_flights_06R, threshold_06R_area, results_06R)
+
+    return results_24L, results_06R
+
+
+
+
+
 
 
 
 # Extraer los datos contiguos y la tabla de información de vuelos
 contiguous_flights_24L, contiguous_flights_06R, flight_info = extract_contiguous_pairs()
-csv_file_path = select_file()
-results_06R = calculate_min_distances(csv_file_path, contiguous_flights_06R)
-results, compliance_percentage = compare_loa_separation(results_06R, flight_info)
+dep = load_departures()
+file_path = "assets/CsvFiles/P3_04_08h.csv"
+csv_file = load_flights(file_path)
+csv_file_alt = correct_altitude_for_file(csv_file)
+results_24L, results_06R = calculate_min_distances(dep, csv_file_alt, contiguous_flights_24L, contiguous_flights_06R)
+# Poner la funcion q sea para ver la salida
+results, compliance_percentage = compare_loa_separation(results_24L, flight_info) # flight_info    en caso de utilizar el wake oel loa
 print(results)
 print(compliance_percentage)
