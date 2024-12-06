@@ -1,5 +1,5 @@
 # ATM Project
-[Click here to use the app](https://atmapp.streamlit.app/)
+[Click here to use the app](https://atmproject.streamlit.app/)
 
 ## Project Structure
 ```
