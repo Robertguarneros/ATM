@@ -152,8 +152,8 @@ flowchart TD
     G --> H(filter_empty_trajectories)
     H --> I(interpolate_trajectories)
     I --> J(filter_trajectories_by_runway)
-    K --> L(get_corrected_altitude_and_ias_at_threshold)
-    L --> M(End)
+    J --> K(get_corrected_altitude_and_ias_at_threshold)
+    K --> L(End)
 ```
 
 ### Horizontal distance to TMR-40
