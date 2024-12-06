@@ -39,7 +39,6 @@ This process is designed to evaluate and compare the separation between consecut
 - `compare_wake_separation`: considers the wake turbulence separation distances based on aircraft types (Super Heavy, Heavy, Medium, and Light). It compares and returns the actual separation distance between pairs of flights against the required distance for their respective aircraft wakes.
 - `compare_loa_separation`: compare the separation between flights using a table based on aircraft type and their SID (Standard Instrument Departure) group. Returns the distances between consecutive flights, in addition to information on the type of aircraft of each flight and the SID corresponding to each one, thus knowing the data to be able to assign the minimum distances shown in the LoA table.
 
-```
 <details>
   <summary>Flowchart!</summary>
 
