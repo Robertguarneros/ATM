@@ -7,7 +7,7 @@ ATM/
 │   .DS_Store
 │   .flake8
 │   .gitignore
-│   home_page.py
+│   Home.py
 │   project.toml
 │   README.md
 │   requirements.txt
@@ -92,7 +92,7 @@ df_reshaped = pd.read_csv('data/us-population-2010-2019-reshaped.csv')
 1. Clone repo: `git clone https://github.com/Robertguarneros/ATM.git`
 2. Change into the project directory 
 3. Install the dependencies: `pip install -r requirements.txt`
-4. Run proyect with `streamlit run .\home_page.py`
+4. Run proyect with `streamlit run .\Home.py`
 
 ### Project Structure
 
