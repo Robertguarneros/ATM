@@ -20,9 +20,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
-# Page title
-st.title("Departures Trajectories")
+st.title("General Information")
 
 # Load data
 loaded_departures = load_departures("assets/InputFiles/2305_02_dep_lebl.xlsx")
@@ -74,6 +72,55 @@ runway_options = {
 }
 selected_runway = st.sidebar.selectbox("Select Runway", list(runway_options.keys()))
 selected_runway_results = runway_options[selected_runway]
+
+
+st.divider()
+st.subheader("Flight Distribution")
+
+# Prepare data for pie chart: distribution of flights per runway
+flight_counts = {
+    "24L": len(filtered_trajectories_24L),
+    "06R": len(filtered_trajectories_06R),
+}
+fig_pie = go.Figure(
+    data=[go.Pie(labels=list(flight_counts.keys()), values=list(flight_counts.values()))]
+)
+fig_pie.update_layout(title="Distribution of Flights per Runway")
+st.plotly_chart(fig_pie, use_container_width=True)
+
+# Prepare data for bar chart: distribution of flights per hour
+flight_hours = []  # Store the hour of the first timestamp for each flight
+
+for trajectory in filtered_trajectories.values():  # Combine all flights
+    if trajectory:  # Ensure the trajectory is not empty
+        first_point = trajectory[0]  # Take the first point of the flight
+        flight_hours.append(int(first_point["time"]) // 3600)  # Convert time to hours
+
+# Group flights by hour
+flight_hours_df = pd.DataFrame(flight_hours, columns=["hour"])
+flight_hour_counts = flight_hours_df["hour"].value_counts().sort_index()
+
+# Create bar chart
+fig_bar = go.Figure(
+    data=[
+        go.Bar(
+            x=flight_hour_counts.index,
+            y=flight_hour_counts.values,
+            text=flight_hour_counts.values,
+            textposition="auto",
+        )
+    ]
+)
+fig_bar.update_layout(
+    title="Distribution of Flights per Hour",
+    xaxis_title="Hour of Day (UTC)",
+    yaxis_title="Number of Flights",
+)
+st.plotly_chart(fig_bar, use_container_width=True)
+
+st.divider()
+# Page title
+st.subheader("Departures Trajectories")
 
 # Handle case when there are no flights
 if not selected_runway_results:
