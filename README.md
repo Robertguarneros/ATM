@@ -127,6 +127,11 @@ This function is composed of multiple smaller functions that together achieve th
 
 
 ## For Developers
+
+<details>
+  <summary>View</summary>
+
+
 ### First time installing Project
 1. Clone repo: `git clone https://github.com/Robertguarneros/ATM.git`
 2. Change into the project directory 
@@ -211,3 +216,5 @@ The requirements can be installed from the requirements.txt file:
 
 #### Verify Requirements
 `pip list`
+
+</details>
