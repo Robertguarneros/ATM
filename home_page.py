@@ -10,5 +10,5 @@ st.set_page_config(
 )
 
 st.title("Welcome to the ATM Project!")
-st.write("Use the sidebar to navigate to different sections.")
+st.write("Use the sidebar to navigate to different sections!")
 alt.themes.enable("dark")

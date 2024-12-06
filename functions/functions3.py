@@ -522,15 +522,6 @@ def interpolate_trajectories(filtered_trajectories):
 
     return interpolated_trajectories
 
-# Set a threshold
-# Check for every flight, the time at which it crosses said threshold
-# Record the callsign, IAS and corrected altitude at that time for that flight
-# Store them in a vector, one for 24L and one for 06R 
-# Keep in mind some flights will never appear due to turning earlier
-# Keep in mind the percentage of flights that cross and dont cross over the total flights in the vector
-# Show data as distribution by time, type of aircraft, SID, company, etc.
-# Show statistics
-
 
 def get_corrected_altitude_and_ias_at_threshold(interpolated_trajectories_024L, interpolated_trajectories_06R):
     """
@@ -601,8 +592,6 @@ def get_corrected_altitude_and_ias_at_threshold(interpolated_trajectories_024L, 
                 break  # Exit loop after first match for this flight
 
     return results
-
-
 
 
 def get_corrected_altitude_and_ias_at_threshold_global(loaded_departures,loaded_flights):
