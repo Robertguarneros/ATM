@@ -3,6 +3,14 @@ import pandas as pd
 import streamlit as st
 from functions.functions3 import calculate_min_distance_to_TMR_40_24L_global, load_departures, load_flights, load_24h
 
+# Streamlit page configuration
+st.set_page_config(
+    page_title="ATM Project",
+    page_icon="assets/logo_eurocontrol.png",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
 # Page title
 st.title("Horizontal Distance to TMR-40 for Departures from 24L")
 st.write("This dashboard provides insights into the horizontal distance to TMR-40 for departures from runway 24L, including statistics, distributions, and detailed visualizations.")

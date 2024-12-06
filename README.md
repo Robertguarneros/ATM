@@ -46,6 +46,16 @@ ATM/
 
 ## Objectives
 
+- Show statistics about the separation between flights and wether or not the separation requirements are fulfilled.
+    - Radar
+    - Wake
+    - Letter of Agreement
+- Show statistics of the position and corrected altitude when the departure (from 24L) starts turning
+- Show whether radial 234 is crossed when departing 
+- Show IAS of departures at 850, 1500 and 3500 ft for both runways
+- Altitude corrected and IAS of traffic at threshold when departing at 24L and 06R
+- Horizontal (stereographical) distance from departures to TMR-40 when departing from 24L
+
 ### 1 David
 - Separation between flights
     - Pasar a stereograficas
@@ -79,13 +89,20 @@ def dms_to_decimal(degrees, minutes, seconds, direction):
     - 24L 411731.99N, 0020611.81E Latitude: 41.29221944444444, Longitude: 2.1032805555555556
 - Horizontal distance stereographical from departures to TMR-40 (41,27194444440, 2,04777777778) por 24L
 
-
-## Example
-df_reshaped = pd.read_csv('data/us-population-2010-2019-reshaped.csv')
+## Functions
 
 ### Separation between flights
-
-
+Explain
+### Position and Altitude turns
+Explain
+### Radial Crossing
+Explain
+### IAS at different altitudes
+Explain
+### Altitude and IAS at threshold
+Explain
+### Horizontal distance to TMR-40
+Explain
 
 ## For Developers
 ### First time installing Project

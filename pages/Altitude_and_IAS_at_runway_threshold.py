@@ -3,6 +3,13 @@ import pandas as pd
 import streamlit as st
 from functions.functions3 import load_departures, load_flights, load_24h, get_corrected_altitude_and_ias_at_threshold_global
 
+# Streamlit page configuration
+st.set_page_config(
+    page_title="ATM Project",
+    page_icon="assets/logo_eurocontrol.png",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 # Page title
 st.title("Altitude and IAS at Runway Threshold")
 st.write("This dashboard provides insights into the Altitude and IAS at the threshold of runways 24L and 06R, including statistics, distributions, and detailed visualizations.")
