@@ -4,6 +4,7 @@
 ## Project Structure
 
 <details>
+
 ```
 ATM/
 │   .DS_Store
@@ -66,6 +67,7 @@ ATM/
 
 ### Miscellaneous functions
 <details>
+
 These are functions we use repeatedly within our calculations:
 - `load_departures`: this function is in charge of loading the excel contaning the departure list and returns a list of the departures.
 - `load_flights`: this function is in charge of loading the `csv` files that contain the flight data. It returns a matrix with the data.
