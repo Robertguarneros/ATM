@@ -1,6 +1,7 @@
 import streamlit as st
 import altair as alt
 import pandas as pd
+from collections import defaultdict
 from functions.functions1 import load_flights, load_24h, general, compare_radar_separation, compare_wake_separation, compare_loa_separation
 
 # Streamlit page configuration
@@ -45,10 +46,27 @@ selected_time_frame = st.sidebar.selectbox("Select Time Frame", list(time_frame_
 selected_flights = time_frame_options[selected_time_frame]
 
 results_24L, results_06R, flight_info = general(selected_flights)
+# Crear un defaultdict para sumar las claves comunes
+combined_results = defaultdict(float)
 
-runway_options = {"24L": results_24L, "06R": results_06R}
+# Sumar los valores de results_24L
+for key, value in results_24L.items():
+    combined_results[key] += value
+
+# Sumar los valores de results_06R
+for key, value in results_06R.items():
+    combined_results[key] += value
+
+# Convertir de nuevo a un diccionario normal si lo prefieres
+combined_results = dict(combined_results)
+runway_options = {
+    "24L": results_24L,
+    "06R": results_06R,
+    "24L and 06R": combined_results
+}
 selected_runway = st.sidebar.selectbox("Select Runway", list(runway_options.keys()))
 selected_runway_results = runway_options[selected_runway]
+
 
 st.divider()#===========================================================================
 st.header("Radar Comparation")
@@ -320,19 +338,6 @@ df_bars['Category Rear'] = df_bars['Category Rear'].astype(str).str.strip()
 # Crear una columna de cumplimiento (texto) para gráficos y visualizaciones
 df_bars['Compliance'] = df_bars['Compliant'].apply(lambda x: 'Compliant' if x else 'Non-Compliant')
 
-# Estadísticas por grupos de SIDs
-sid_counts = df_bars.groupby(['Group Rear']).size().reset_index(name='Number of Aircraft')
-sid_compliance = (
-    df_bars.groupby(['Group Rear', 'Compliance']).size()
-    .reset_index(name='Count')
-    .pivot(index='Group Rear', columns='Compliance', values='Count')
-    .fillna(0)
-    .reset_index()
-)
-sid_compliance['Total'] = sid_compliance['Compliant'] + sid_compliance['Non-Compliant']
-sid_compliance['Compliance (%)'] = (sid_compliance['Compliant'] / sid_compliance['Total']) * 100
-sid_compliance['Non-Compliance (%)'] = (sid_compliance['Non-Compliant'] / sid_compliance['Total']) * 100
-
 # Crear columnas para los gráficos
 col1, col2 = st.columns(2)
 
@@ -542,42 +547,60 @@ for (front_category, rear_category, condition), min_distance in loa_separation.i
             else:
                 st.write("No compliance data available.")
 
-# Crear columnas para los gráficos
-col1, col2 = st.columns(2)
 
-with col1:
-    st.subheader("Number of Aircraft by SID Group")
-    bar_chart_sids = alt.Chart(sid_counts).mark_bar().encode(
-        y=alt.Y("Group Rear:N", title="SID Group", sort="-x"),
-        x=alt.X("Number of Aircraft:Q", title="Number of Aircraft"),
-        color=alt.Color("Group Rear:N", scale=alt.Scale(scheme="category10")),
-        tooltip=["Group Rear:N", "Number of Aircraft:Q"]
-    ).properties(
-        width=500,
-        height=300,
-        title="Aircraft Count by SID Group"
-    )
-    st.altair_chart(bar_chart_sids, use_container_width=True)
+# Estadísticas por grupos de SIDs
+sid_counts = df_bars.groupby(['Group Rear']).size().reset_index(name='Number of Aircraft')
+sid_compliance = (
+    df_bars.groupby(['Group Rear', 'Compliance']).size()
+    .reset_index(name='Count')
+    .pivot(index='Group Rear', columns='Compliance', values='Count')
+    .fillna(0)
+    .reset_index()
+)
 
-with col2:
-    # Gráfico de cumplimiento por SID Group
-    st.subheader("Compliance Distribution by SID Group")
-    sid_compliance_melted = sid_compliance.melt(
-        id_vars="Group Rear",
-        value_vars=["Compliance (%)", "Non-Compliance (%)"],
-        var_name="Compliance Type",
-        value_name="Percentage"
-    )
-    sid_group_chart = alt.Chart(sid_compliance_melted).mark_bar().encode(
-        x=alt.X("Percentage:Q", title="Percentage"),
-        y=alt.Y("Group Rear:N", title="SID Group", sort="-x"),
-        color=alt.Color("Compliance Type:N", scale=alt.Scale(range=["steelblue", "orange"])),
-        tooltip=["Group Rear:N", "Compliance Type:N", "Percentage:Q"]
-    ).properties(
-        width=500,
-        height=300,
-        title="Compliance Percentage by SID Group"
-    )
-    st.altair_chart(sid_group_chart, use_container_width=True)
+# Intentar realizar el cálculo de la columna de cumplimiento
+try:
+    sid_compliance['Total'] = sid_compliance['Compliant'] + sid_compliance['Non-Compliant']
+    sid_compliance['Compliance (%)'] = (sid_compliance['Compliant'] / sid_compliance['Total']) * 100
+    sid_compliance['Non-Compliance (%)'] = (sid_compliance['Non-Compliant'] / sid_compliance['Total']) * 100
 
+    # Crear columnas para los gráficos
+    col1, col2 = st.columns(2)
 
+    with col1:
+        st.subheader("Number of Aircraft by SID Group")
+        bar_chart_sids = alt.Chart(sid_counts).mark_bar().encode(
+            y=alt.Y("Group Rear:N", title="SID Group", sort="-x"),
+            x=alt.X("Number of Aircraft:Q", title="Number of Aircraft"),
+            color=alt.Color("Group Rear:N", scale=alt.Scale(scheme="category10")),
+            tooltip=["Group Rear:N", "Number of Aircraft:Q"]
+        ).properties(
+            width=500,
+            height=300,
+            title="Aircraft Count by SID Group"
+        )
+        st.altair_chart(bar_chart_sids, use_container_width=True)
+
+    with col2:
+        # Gráfico de cumplimiento por SID Group
+        st.subheader("Compliance Distribution by SID Group")
+        sid_compliance_melted = sid_compliance.melt(
+            id_vars="Group Rear",
+            value_vars=["Compliance (%)", "Non-Compliance (%)"],
+            var_name="Compliance Type",
+            value_name="Percentage"
+        )
+        sid_group_chart = alt.Chart(sid_compliance_melted).mark_bar().encode(
+            x=alt.X("Percentage:Q", title="Percentage"),
+            y=alt.Y("Group Rear:N", title="SID Group", sort="-x"),
+            color=alt.Color("Compliance Type:N", scale=alt.Scale(range=["steelblue", "orange"])),
+            tooltip=["Group Rear:N", "Compliance Type:N", "Percentage:Q"]
+        ).properties(
+            width=500,
+            height=300,
+            title="Compliance Percentage by SID Group"
+        )
+        st.altair_chart(sid_group_chart, use_container_width=True)
+
+except Exception as e:
+    st.write(" ")
