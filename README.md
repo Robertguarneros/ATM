@@ -38,6 +38,27 @@ This process is designed to evaluate and compare the separation between consecut
 - `compare_radar_separation`: compare the separation distance between consecutive flights and checks if it complies with the minimum radar separation distance (3 NM). It returns whether each pair of flights meets the minimum separation requirement and the percentage of compliant pairs.
 - `compare_wake_separation`: considers the wake turbulence separation distances based on aircraft types (Super Heavy, Heavy, Medium, and Light). It compares and returns the actual separation distance between pairs of flights against the required distance for their respective aircraft wakes.
 - `compare_loa_separation`: compare the separation between flights using a table based on aircraft type and their SID (Standard Instrument Departure) group. Returns the distances between consecutive flights, in addition to information on the type of aircraft of each flight and the SID corresponding to each one, thus knowing the data to be able to assign the minimum distances shown in the LoA table.
+
+```
+<details>
+  <summary>Flowchart!</summary>
+
+  The flow of the function would look like this:
+
+  ```mermaid
+  flowchart TD
+      A[Start] -->B(extract_contiguous_pairs)
+      B2(load_departures)-->B
+      A2(load_flights) --> C
+      B --> C(calculate_min_distances)
+      C --> D1(compare_radar_separation)
+      C --> D2(compare_wake_separation)
+      C --> D3(compare_loa_separation)
+      D4(SID groups)-->D3
+      D5(Aircraft type)-->D3
+```
+</details>
+
 ### Position and Altitude turns
 Explain
 ### Radial Crossing
