@@ -3,12 +3,44 @@ from datetime import timedelta
 import csv
 import pandas as pd
 import numpy as np
+import re
 
 # Constants
 A = 6378137.0  # Semi-major axis in meters
 E2 = 0.00669437999014  # Eccentricity squared for WGS84
 B = 6356752.3142  # Semi-minor axis in meters
 
+# Load flight data
+def load_24h(file1, file2, file3, file4, file5, file6):
+    # Initialize an empty matrix to hold all data
+    matrix = []
+    first_file = True  # Flag to indicate if it's the first file being processed
+
+    for file in [file1, file2, file3, file4, file5, file6]:
+        with open(file, 'r', encoding='utf-8') as csvfile:
+            reader = csv.reader(csvfile, delimiter=';')
+            
+            # Skip the header for all files except the first
+            if not first_file:
+                next(reader, None)  # Skip the header row
+            else:
+                first_file = False  # Ensure subsequent files skip the header
+
+            # Generate a matrix by reading all rows
+            for row in reader:
+                # Replace commas with dots, excluding column 23, and replace 'NV' with 'N/A'
+                processed_row = [
+                    cell.replace(',', '.').replace('NV', 'N/A') if ',' in cell and i != 23 else cell.replace('NV', 'N/A')
+                    for i, cell in enumerate(row)
+                ]
+                matrix.append(processed_row)
+            
+            # Remove the 25th column (index 24) from each row
+            for row in matrix:
+                if len(row) > 24:  # Ensure row has at least 25 columns
+                    del row[24]  # Remove the 25th column
+
+    return matrix
 
 def calculate_rotation_matrix(lat, lon):
     """
@@ -214,6 +246,7 @@ def load_departures():
     return matrix
 
 
+# Load flight data
 def load_flights(file_path):
     # Open the CSV file
     with open(file_path, 'r', encoding='utf-8') as csvfile:
@@ -295,10 +328,6 @@ def filter_empty_trajectories(trajectories):
     }
     return filtered_trajectories
 
-
-import pandas as pd
-import re
-from datetime import timedelta
 
 def extract_contiguous_pairs():
     # Cargar el archivo
@@ -473,13 +502,16 @@ def compare_loa_separation(contiguous_flights_dist, flight_info):
         for sid in sid_06R_df[col].dropna()
     }
 
-    # Función para determinar si dos SIDs pertenecen al mismo grupo
-    def are_sids_in_same_group(sid1, sid2):
-        base1, base2 = sid1.split('-')[0], sid2.split('-')[0]
-        group1 = sid_groups_24L.get(base1) or sid_groups_06R.get(base1)
-        group2 = sid_groups_24L.get(base2) or sid_groups_06R.get(base2)
-        return group1 == group2 if group1 and group2 else False
+    # Función para determinar el grupo de una SID
+    def get_sid_group(sid):
+        base = sid.split('-')[0]
+        return sid_groups_24L.get(base) or sid_groups_06R.get(base) or "Sin Grupo"
 
+    # Función para determinar si dos SIDs están en el mismo grupo
+    def are_sids_in_same_group(sid1, sid2):
+        group1 = get_sid_group(sid1)
+        group2 = get_sid_group(sid2)
+        return group1 == group2 if group1 and group2 else False
 
     # Definir la tabla de separación LoA
     loa_separation = {
@@ -599,6 +631,9 @@ def compare_loa_separation(contiguous_flights_dist, flight_info):
         # Determinar si están en el mismo grupo de SID
         same_sid = "Misma" if are_sids_in_same_group(sid_1, sid_2) else "Distinta"
 
+        # Obtener el grupo de la SID del segundo avión
+        group_2 = get_sid_group(sid_2)
+
         # Obtener la separación mínima de la tabla LoA
         separation_key = (category_1, category_2, same_sid)
         min_separation = loa_separation.get(separation_key, 3)
@@ -609,13 +644,14 @@ def compare_loa_separation(contiguous_flights_dist, flight_info):
             compliant_pairs += 1
 
         # Agregar los resultados
-        results.append((ti_1, ti_2, min_distance, category_1, category_2, min_separation, same_sid, is_compliant))
+        results.append((ti_1, ti_2, min_distance, category_1, category_2, min_separation, same_sid, group_2, is_compliant))
 
     # Calcular el porcentaje de cumplimiento
     total_pairs = len(contiguous_flights_dist)
     compliance_percentage = (compliant_pairs / total_pairs) * 100 if total_pairs > 0 else 0
 
     return results, compliance_percentage
+
 
 
 def calculate_min_distances(loaded_departures, loaded_flights, contiguous_flights_24L, contiguous_flights_06R):
@@ -702,20 +738,26 @@ def calculate_min_distances(loaded_departures, loaded_flights, contiguous_flight
     return results_24L, results_06R
 
 
+def general(file_path):
+    
+    #Funciones
+    csv_file = file_path
+    contiguous_flights_24L, contiguous_flights_06R, flight_info = extract_contiguous_pairs()
+    dep = load_departures()
+    csv_file_alt = correct_altitude_for_file(csv_file)
+    results_24L, results_06R = calculate_min_distances(dep, csv_file_alt, contiguous_flights_24L, contiguous_flights_06R)
+
+    return results_24L, results_06R, flight_info
 
 
 
 
 
-
-# Extraer los datos contiguos y la tabla de información de vuelos
-contiguous_flights_24L, contiguous_flights_06R, flight_info = extract_contiguous_pairs()
-dep = load_departures()
+'''
 file_path = "assets/CsvFiles/P3_04_08h.csv"
-csv_file = load_flights(file_path)
-csv_file_alt = correct_altitude_for_file(csv_file)
-results_24L, results_06R = calculate_min_distances(dep, csv_file_alt, contiguous_flights_24L, contiguous_flights_06R)
+results_24L, results_06R, flight_info = general(file_path)
 # Poner la funcion q sea para ver la salida
 results, compliance_percentage = compare_loa_separation(results_24L, flight_info) # flight_info    en caso de utilizar el wake oel loa
 print(results)
 print(compliance_percentage)
+'''
