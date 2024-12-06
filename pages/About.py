@@ -16,5 +16,7 @@ This project was developed for PGTA in QT-2024 by Group 8:
 - Roberto Guarneros
 - Angela Nuñez
 - David Gracia
+            
+For more information visit the [GitHub repository](https://github.com/Robertguarneros/ATM.git)
 """)
 

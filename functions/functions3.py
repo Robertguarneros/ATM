@@ -1,5 +1,4 @@
 import csv
-
 import numpy as np
 import pandas as pd
 
@@ -173,7 +172,6 @@ def load_departures(file_path):
     return matrix
 
 
-
 # Load flight data
 def load_flights(file_path):
     # Open the CSV file
@@ -196,9 +194,6 @@ def load_flights(file_path):
                 del row[24]  # Remove the 25th column
 
     return matrix
-
-# Load flight data
-import csv
 
 # Load flight data
 def load_24h(file1, file2, file3, file4, file5, file6):
