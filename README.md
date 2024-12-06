@@ -157,6 +157,8 @@ threshold_06R_area = {
       I --> J(filter_trajectories_by_runway)
       J --> K(get_corrected_altitude_and_ias_at_threshold)
       K --> L(End)
+```
+</details>
 
 ### Horizontal distance to TMR-40
 Explain
