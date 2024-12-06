@@ -30,6 +30,7 @@ loaded_all_flights = load_24h("assets/CsvFiles/P3_00_04h.csv",
                               "assets/CsvFiles/P3_20_24h.csv")
 
 # Time frame selector
+st.sidebar.header("Filters")
 time_frame_options = {
     "From 00:00 to 04:00": loaded_flights_00_04,
     "From 04:00 to 08:00": loaded_flights_04_08,
@@ -37,9 +38,9 @@ time_frame_options = {
     "From 12:00 to 16:00": loaded_flights_12_16,
     "From 16:00 to 20:00": loaded_flights_16_20,
     "From 20:00 to 24:00": loaded_flights_20_24,
-    "Whole Day": loaded_all_flights
+    "Whole Day": loaded_all_flights,
 }
-selected_time_frame = st.selectbox("Select Time Frame", list(time_frame_options.keys()))
+selected_time_frame = st.sidebar.selectbox("Select Time Frame", list(time_frame_options.keys()))
 selected_flights = time_frame_options[selected_time_frame]
 
 # Get results for runway thresholds
@@ -49,7 +50,7 @@ runway_options = {
     "06R": results.get("06R", []),
     "24L and 06R": results
 }
-selected_runway = st.selectbox("Select Runway", list(runway_options.keys()))
+selected_runway = st.sidebar.selectbox("Select Runway", list(runway_options.keys()))
 selected_runway_results = runway_options[selected_runway]
 
 # Combine results for both runways if "24L and 06R" is selected
