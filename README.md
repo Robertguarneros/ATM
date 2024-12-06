@@ -31,7 +31,6 @@ These are functions we use repeatedly within our calculations:
     - `system_cartesian_to_system_stereographical`
 
 
-
 ### Separation between flights
 Explain
 ### Position and Altitude turns
