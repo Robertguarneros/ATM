@@ -139,22 +139,24 @@ threshold_06R_area = {
         "max_lon": 2.074564    # Right longitude
     }
 ```
+<details>
+  <summary>Click to see the flowchart!</summary>
 
-The flow of the function would look like this:
-```mermaid
-flowchart TD
-    A[Start] -->B(load_departures)
-    B --> C(load_flights)
-    C --> D(load_24h)
-    D --> E(filter_departures_by_runway)
-    E --> F(correct_altitude_for_file)
-    F --> G(get_trajectory_for_airplane)
-    G --> H(filter_empty_trajectories)
-    H --> I(interpolate_trajectories)
-    I --> J(filter_trajectories_by_runway)
-    J --> K(get_corrected_altitude_and_ias_at_threshold)
-    K --> L(End)
-```
+  The flow of the function would look like this:
+
+  ```mermaid
+  flowchart TD
+      A[Start] -->B(load_departures)
+      B --> C(load_flights)
+      C --> D(load_24h)
+      D --> E(filter_departures_by_runway)
+      E --> F(correct_altitude_for_file)
+      F --> G(get_trajectory_for_airplane)
+      G --> H(filter_empty_trajectories)
+      H --> I(interpolate_trajectories)
+      I --> J(filter_trajectories_by_runway)
+      J --> K(get_corrected_altitude_and_ias_at_threshold)
+      K --> L(End)
 
 ### Horizontal distance to TMR-40
 Explain
