@@ -2,6 +2,10 @@
 [Click here to use the app](https://atmproject.streamlit.app/)
 
 ## Project Structure
+
+<ProjectStructure>
+    <summary></summary>
+
 ```
 ATM/
 │   .DS_Store
@@ -45,6 +49,8 @@ ATM/
 │       Radial_Crossing.py
 │       Separation_Losses.py
 ```
+</ProjectStructure>
+
 
 ## Objectives
 
@@ -58,42 +64,11 @@ ATM/
 - Altitude corrected and IAS of traffic at threshold when departing at 24L and 06R
 - Horizontal (stereographical) distance from departures to TMR-40 when departing from 24L
 
-### 1 David
-- Separation between flights
-    - Pasar a stereograficas
-    - Funcion que regrese listas de vuelos consecutivos
-    - Comparar distancias (hecha) y ver que cumplan:
-        - Radar TMA solo tomar 1
-        - Estela, usar fichero clasificación, espacio torre y TMA solo tomar 1
-        - LoA espacio torre
-
-### 2 Angela
-- Función para saber si despega por la 24L o 06R
-- Departures 24L
-    - Función para saber si despega por la 24L o 06R
-    - Detectar que inica el viraje (usar Roll Angle, Heading y True Track Angle)
-    - Position and altitude corrected where turn starts when departing from 24L
-    - Mirar si durante el despegue ha cruzado el radial 234 DVOR-DME BCN
-- IAS of departures at 850, 1500 and 3500 ft for both runways
-
-### 3 Roberto 
-- Mirar las coordenadas del threshold de cada pista
-- Altitude corrected and IAS of traffic at threshold when departing at 24L and 06R
-    - Conversion with 
-'''python
-def dms_to_decimal(degrees, minutes, seconds, direction):
-    decimal = degrees + (minutes / 60) + (seconds / 3600)
-    if direction in ['S', 'W']:
-        decimal = -decimal
-    return decimal
-'''
-    - 06R 411656.32N, 0020427.66E Latitude: 41.28231111111111, Longitude: 2.0743500000000004
-    - 24L 411731.99N, 0020611.81E Latitude: 41.29221944444444, Longitude: 2.1032805555555556
-- Horizontal distance stereographical from departures to TMR-40 (41,27194444440, 2,04777777778) por 24L
-
 ## Functions
 
 ### Miscellaneous functions
+<miscellaneous_details>
+    <summary>Click to see!</summary>
 These are functions we use repeatedly within our calculations:
 - `load_departures`: this function is in charge of loading the excel contaning the departure list and returns a list of the departures.
 - `load_flights`: this function is in charge of loading the `csv` files that contain the flight data. It returns a matrix with the data.
@@ -103,6 +78,8 @@ These are functions we use repeatedly within our calculations:
     - `geodesic_to_geocentric`
     - `geocentric_to_system_cartesian`
     - `system_cartesian_to_system_stereographical`
+
+</miscellaneous_details>
 
 ### Separation between flights
 Explain
