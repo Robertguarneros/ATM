@@ -3,9 +3,7 @@
 
 ## Project Structure
 
-<ProjectStructure>
-    <summary></summary>
-
+<details>
 ```
 ATM/
 │   .DS_Store
@@ -49,7 +47,7 @@ ATM/
 │       Radial_Crossing.py
 │       Separation_Losses.py
 ```
-</ProjectStructure>
+</details>
 
 
 ## Objectives
@@ -67,8 +65,7 @@ ATM/
 ## Functions
 
 ### Miscellaneous functions
-<miscellaneous_details>
-    <summary>Click to see!</summary>
+<details>
 These are functions we use repeatedly within our calculations:
 - `load_departures`: this function is in charge of loading the excel contaning the departure list and returns a list of the departures.
 - `load_flights`: this function is in charge of loading the `csv` files that contain the flight data. It returns a matrix with the data.
@@ -79,7 +76,7 @@ These are functions we use repeatedly within our calculations:
     - `geocentric_to_system_cartesian`
     - `system_cartesian_to_system_stereographical`
 
-</miscellaneous_details>
+</details>
 
 ### Separation between flights
 Explain
