@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import plotly.graph_objects as go
 from functions.functions3 import (
     load_departures,
     load_flights,
@@ -69,25 +70,46 @@ results = {**filtered_trajectories_24L, **filtered_trajectories_06R}
 runway_options = {
     "24L": filtered_trajectories_24L,
     "06R": filtered_trajectories_06R,
-    "24L and 06R": results
+    "All runways": results
 }
 selected_runway = st.sidebar.selectbox("Select Runway", list(runway_options.keys()))
 selected_runway_results = runway_options[selected_runway]
 
-# Prepare data for map visualization
-all_trajectory_points = []
-
-for flight_id, flight_data in selected_runway_results.items():
-    for point in flight_data:
-        all_trajectory_points.append({
-            "latitude": float(point["latitude"]),
-            "longitude": float(point["longitude"]),
-        })
-
-trajectory_df = pd.DataFrame(all_trajectory_points)
-
-# Display the map
-if not trajectory_df.empty:
-    st.map(trajectory_df, zoom=10, use_container_width=True)
+# Handle case when there are no flights
+if not selected_runway_results:
+    st.warning("No flight trajectories available for the selected runway and time frame.")
 else:
-    st.warning("No trajectory data available for the selected runway and time frame.")
+    # Plotly Visualization
+    fig = go.Figure()
+
+    # Add each trajectory to the map
+    for flight_id, flight_data in selected_runway_results.items():
+        lats = [float(point["latitude"]) for point in flight_data]
+        lons = [float(point["longitude"]) for point in flight_data]
+        fig.add_trace(
+            go.Scattermapbox(
+                lat=lats,
+                lon=lons,
+                mode="lines+markers",
+                marker=dict(size=5),
+                line=dict(width=2),
+                name=f"Flight {flight_id}",
+            )
+        )
+
+    # Update map layout
+    # Update map layout with a specific size
+    fig.update_layout(
+    mapbox=dict(
+        style="carto-positron",  # Light map style
+        center={"lat": 41.298123, "lon": 2.080165},  # Center map at Barcelona Airport
+        zoom=10,
+    ),
+    margin={"r": 0, "t": 0, "l": 0, "b": 0},
+    width=1200,  # Set the desired width of the map
+    height=600,  # Set the desired height of the map
+    showlegend=True,
+)
+
+    # Display the map
+    st.plotly_chart(fig, use_container_width=True)
