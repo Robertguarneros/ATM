@@ -70,9 +70,6 @@ runway_options = {
     "06R": filtered_trajectories_06R,
     "All runways": results
 }
-selected_runway = st.sidebar.selectbox("Select Runway", list(runway_options.keys()))
-selected_runway_results = runway_options[selected_runway]
-
 
 st.divider()
 st.subheader("Flight Distribution")
@@ -121,7 +118,8 @@ st.plotly_chart(fig_bar, use_container_width=True)
 st.divider()
 # Page title
 st.subheader("Departures Trajectories")
-
+selected_runway = st.selectbox("Select Runway", list(runway_options.keys()))
+selected_runway_results = runway_options[selected_runway]
 # Handle case when there are no flights
 if not selected_runway_results:
     st.warning("No flight trajectories available for the selected runway and time frame.")
