@@ -240,11 +240,10 @@ else:
             use_container_width=True,
         )
 
-    st.divider()  # Add a visual divider between sections
 
-    st.subheader("Map with Initial Turning Points")
-
-    if time_frame_options != loaded_all_flights:
+    if selected_flights != loaded_all_flights:
+        st.divider()  # Add a visual divider between sections
+        st.subheader("Map with Initial Turning Points")
         m = folium.Map(
             location=[df_clean["Latitude"].mean(), df_clean["Longitude"].mean()],
             zoom_start=14,
