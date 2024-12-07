@@ -59,11 +59,103 @@ This process is designed to evaluate and compare the separation between consecut
 </details>
 
 ### Position and Altitude turns
-Explain
+This set of functions processes and analyzes flight data to detect the initiation of turns after departing from runway 24L. It examines interpolated trajectories to identify the first point where an aircraft begins its turn by calculating cumulative changes in heading, roll angle (RA), and true track angle (TTA) over a 2-second interval. When certain thresholds are exceeded, the turn is detected, and a vector is generated with the aircraft's ID and position at the moment the turn starts. 
+- `correct_altitude_for_file`: this function is called to get the corrected altitude for the whole matrix and not just one flight, it uses function `corrected_altitude` described previously.
+- `get_trajectory_for_airplane`: this function takes the matrix of flights and makes a dictionary that has the flight ID and within, the coordinates of the trajectory. This allows us to quickly interpolate or plot trajectories since the data for one flight is already in one place and not spread.
+- `filter_empty_trajectories`: this function filters any flight that might be empty.
+- `filter_departures_by_runway`: this function returns a list containing the identifiers of the flights that depart from 24L and another list for 06R.
+- `filter_trajectories_24L`: filters trajectories to include only flights departing from runway 24L and limits the trajectory points to those around the departure, which is sufficient to capture the initial turn.
+- `interpolate_trajectories`: this function helps us interpolate the coordinates, in our case we decided to use an interpolation of the position, velocity and corrected altitude every 0.5 seconds.
+- `detect_turn_start_from_runway_24L`: this function processes interpolated trajectories and detects the first point where an aircraft initiates a turn after departing from runway 24L. It calculates cumulative changes in heading, roll angle (RA), and true track angle (TTA) over time, comparing values over a 2-second interval (four data points). A turn is detected if the cumulative changes in heading exceed 8 degrees, RA exceed 5 degrees, or TTA exceed 15 degrees.
+
+<details>
+  <summary>Flowchart!</summary>
+
+  The flow of the function would look like this:
+
+  ```mermaid
+  flowchart TD
+      A[Start] --> E{What to load?}
+      A --> B(load_departures)
+      E -->|4h of Flights| C(load_flights)
+      E -->|24h of Flights| D(load_24h)
+      D --> E1(correct_altitude_for_file)
+      C --> E1(correct_altitude_for_file)
+      B --> F(filter_departures_by_runway)
+      E1 --> F(filter_departures_by_runway)
+      F --> G(get_trajectory_for_airplane)
+      G --> H(filter_empty_trajectories)
+      H --> I(filter_trajectories_24L)
+      I --> J(interpolate_trajectories)
+      J --> K(detect_turn_start_from_runway_24L)
+      K --> L(End)
+```
+</details>
+
 ### Radial Crossing
-Explain
+This function analyzes flight trajectories to determine if they cross th R-234 radial of the DVOR/DME BCN. A vector is generated containing the flight ID and a boolean value indicating whether the radial is crossed. The different functions involved are:
+- `correct_altitude_for_file`: this function is called to get the corrected altitude for the whole matrix and not just one flight, it uses function `corrected_altitude` described previously.
+- `get_trajectory_for_airplane`: this function takes the matrix of flights and makes a dictionary that has the flight ID and within, the coordinates of the trajectory. This allows us to quickly interpolate or plot trajectories since the data for one flight is already in one place and not spread.
+- `filter_empty_trajectories`: this function filters any flight that might be empty.
+- `filter_departures_by_runway`: this function returns a list containing the identifiers of the flights that depart from 24L and another list for 06R.
+- `filter_trajectories_24L`: filters trajectories to include only flights departing from runway 24L and limits the trajectory points to those around the departure, which is sufficient to capture the initial turn.
+- `crosses_fixed_radial`: checks if flight trajectories cross the predefined radial line based on coordinated. To acheive this it uses two functions: `dms_to_decimal` to convert coordinates of the radial from degrees, minutes, and seconds to decimal format, and `side_of_line` to calculate the relative position of a point with respect to the R-234 of the DVOR/DME BCN.
+Additionally, the crossing trajectories and the radial are visualized to verify the results visually.
+
+<details>
+  <summary>Flowchart!</summary>
+
+  The flow of the function would look like this:
+
+  ```mermaid
+  flowchart TD
+      A[Start] --> E{What to load?}
+      A --> B(load_departures)
+      E -->|4h of Flights| C(load_flights)
+      E -->|24h of Flights| D(load_24h)
+      D --> E1(correct_altitude_for_file)
+      C --> E1(correct_altitude_for_file)
+      B --> F(filter_departures_by_runway)
+      E1 --> F(filter_departures_by_runway)
+      F --> G(get_trajectory_for_airplane)
+      G --> H(filter_empty_trajectories)
+      H --> I(filter_trajectories_24L)
+      I --> J(crosses_fixed_radial)
+      J --> K(End)
+```
+</details>
+
 ### IAS at different altitudes
-Explain
+This process takes flight and departure data as input, analyzes them through multiple steps, and classifies IAS (Indicated Airspeed) values for altitudes 850 ft, 1500 ft, and 3500 ft based on the departure runway (06R or 24L). The classified IAS values are returned as two dictionaries (ias_06R and ias_24L), each containing IAS data grouped by target altitudes. Here’s a step-by-step breakdown of the different functions involved:
+- `correct_altitude_for_file`: this function is called to get the corrected altitude for the whole matrix and not just one flight, it uses function `corrected_altitude` described previously.
+- `filter_departures_by_runway`: this function returns a list containing the identifiers of the flights that depart from 24L and another list for 06R.
+- `get_trajectory_for_airplane`: this function takes the matrix of flights and makes a dictionary that has the flight ID and within, the coordinates of the trajectory. This allows us to quickly interpolate or plot trajectories since the data for one flight is already in one place and not spread.
+- `filter_empty_trajectories`: this function filters any flight that might be empty.
+- `interpolate_trajectories`: this function helps us interpolate the coordinates, in our case we decided to use an interpolation of the position, velocity and corrected altitude every 0.5 seconds. This is because we wanted to achieve a high precision of detections.
+- `extract_IAS_for_altitudes`: it extracts IAS values for specific target altitudes (850, 1500 and 3500 ft) from interpolated flight trajectories.
+
+<details>
+  <summary>Flowchart!</summary>
+
+  The flow of the function would look like this:
+
+  ```mermaid
+  flowchart TD
+      A[Start] --> E{What to load?}
+      A --> B(load_departures)
+      E -->|4h of Flights| C(load_flights)
+      E -->|24h of Flights| D(load_24h)
+      D --> E1(correct_altitude_for_file)
+      C --> E1(correct_altitude_for_file)
+      B --> F(filter_departures_by_runway)
+      E1 --> F(filter_departures_by_runway)
+      F --> G(get_trajectory_for_airplane)
+      G --> H(filter_empty_trajectories)
+      H --> I(interpolate_trajectories)
+      I --> J(extract_IAS_for_altitudes)
+      J --> K(End)
+```
+</details>
 
 ### Altitude and IAS at threshold
 This function is composed of multiple smaller functions that together achieve the goal of getting the corrected altitude and IAS when crossing the threshold of the runway. The order of these functions is:
