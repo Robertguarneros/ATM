@@ -74,10 +74,12 @@ This process is designed to evaluate and compare the separation between consecut
 
   ```mermaid
   flowchart TD
-      A[Start] -->B(extract_contiguous_pairs)
-      B2(load_departures)-->B
+      A[Start] 
+      B(extract_contiguous_pairs)
+      A-->B2(load_departures)
+      B2-->B -->A2
       A2(load_flights) --> C
-      B --> C(calculate_min_distances)
+      C(calculate_min_distances)
       C --> D1(compare_radar_separation)
       C --> D2(compare_wake_separation)
       C --> D3(compare_loa_separation)
