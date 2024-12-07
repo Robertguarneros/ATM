@@ -13,6 +13,34 @@
 - Altitude corrected and IAS of traffic at threshold when departing at 24L and 06R
 - Horizontal (stereographical) distance from departures to TMR-40 when departing from 24L
 
+
+## Overview of Project
+We have developed the following planning:
+```mermaid
+gantt
+    title Planning
+    dateFormat  DD-MM-YYYY
+
+    section Planning
+    Understanding the Project :a1, 2024-11-26, 1d
+    Select tools (Github, Python)   :a2,2024-11-26 , 1d
+    Create project plan   :a3,2024-11-26, 1d
+
+    section Development
+    Create repository   :b1, 2024-11-26, 1d
+    Create blank project :b2, 2024-11-26, 1d
+    Create functions  :b3, after b2, 6d
+    Extract Data : b4, after b3, 1d
+
+    section Deployment
+    Create web page   :c1, 2024-12-4, 2d
+    Testing :c2, 2024-12-4 , 3d
+    Create report  :c4, 2024-12-6, 1d
+```
+The tasks have been divided among the group members as can be seen [Here](https://github.com/users/Robertguarneros/projects/5)
+
+
+
 ## Functions
 
 <details>
