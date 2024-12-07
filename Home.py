@@ -34,3 +34,4 @@ st.markdown(
 st.write(
     "On the left sidebar, you can navigate to the different sections of the project to view the statistics and visualizations."
 )
+st.write("Please be patient when changing pages or loading a new time frame.")

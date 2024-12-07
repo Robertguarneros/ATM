@@ -244,89 +244,93 @@ else:
 
     st.subheader("Map with Initial Turning Points")
 
-    m = folium.Map(
-        location=[df_clean["Latitude"].mean(), df_clean["Longitude"].mean()],
-        zoom_start=14,
-    )
+    if time_frame_options != loaded_all_flights:
+        m = folium.Map(
+            location=[df_clean["Latitude"].mean(), df_clean["Longitude"].mean()],
+            zoom_start=14,
+        )
 
-    # Iterate over the flight trajectories
-    for flight, points in trajectories.items():
-        # Extract the coordinates from the trajectory
-        trajectory_coords = [
-            (float(p["latitude"]), float(p["longitude"])) for p in points
-        ]
+        # Iterate over the flight trajectories
+        for flight, points in trajectories.items():
+            # Extract the coordinates from the trajectory
+            trajectory_coords = [
+                (float(p["latitude"]), float(p["longitude"])) for p in points
+            ]
 
-        # Draw the trajectory as a purple polyline on the map
-        PolyLine(
-            locations=trajectory_coords,
-            color="purple",  # Set the polyline color to purple
-            weight=0.5,
-            tooltip=f"Flight trajectory for flight {flight}",  # Tooltip with flight information
-        ).add_to(m)
-
-        # Add a marker with information for each point in the dataframe
-        for _, row in df_clean.iterrows():
-            lat = row["Latitude"]  # Latitude of the point
-            lon = row["Longitude"]  # Longitude of the point
-            al = row["Altitude"]  # Altitude of the point
-            aircraft_id = row["Aircraft_ID"]
-
-            # Create the text for the tooltip containing the point information
-            tooltip_text = (
-                f"Lat: {lat}°, Lon: {lon}°, Alt: {al} ft, Aircraft ID: {aircraft_id}"
-            )
-
-            # Create a circle marker with the tooltip for each point
-            CircleMarker(
-                location=[lat, lon],  # Position the marker at the point's coordinates
-                radius=5,
-                fill=True,
-                fill_opacity=0.6,
-                tooltip=tooltip_text,
+            # Draw the trajectory as a purple polyline on the map
+            PolyLine(
+                locations=trajectory_coords,
+                color="purple",  # Set the polyline color to purple
+                weight=0.5,
+                tooltip=f"Flight trajectory for flight {flight}",  # Tooltip with flight information
             ).add_to(m)
 
-    # Display the map in Streamlit
-    html_str = m._repr_html_()
-    html(html_str, height=600)
+            # Add a marker with information for each point in the dataframe
+            for _, row in df_clean.iterrows():
+                lat = row["Latitude"]  # Latitude of the point
+                lon = row["Longitude"]  # Longitude of the point
+                al = row["Altitude"]  # Altitude of the point
+                aircraft_id = row["Aircraft_ID"]
 
-    fig = px.scatter(
-        df_clean,  # Data to be plotted
-        x="Aircraft_ID",  # X-axis data (Aircraft ID)
-        y="Altitude",  # Y-axis data (Altitude)
-        color="Aircraft_ID",  # Color the points based on Aircraft ID
-        title="Altitude of each flight for the selected time frame",  # Title of the plot
-        labels={
-            "Altitude": "Altitude (ft)",
-            "Aircraft_ID": "Aircraft ID",
-        },  # Custom axis labels
-        hover_data={
-            "Altitude": True,
-            "Aircraft_ID": True,
-        },  # Display Aircraft ID and Altitude on hover
-    )
+                # Create the text for the tooltip containing the point information
+                tooltip_text = f"Lat: {lat}°, Lon: {lon}°, Alt: {al} ft, Aircraft ID: {aircraft_id}"
 
-    # Customize the legend layout
-    fig.update_layout(
-        legend=dict(
-            title="Aircraft ID",  # Title of the legend
-            orientation="v",  # Vertical orientation of the legend
-            yanchor="top",  # Anchor the legend to the top
-            y=1,  # Position the legend at the top of the plot (Y-axis)
-            xanchor="left",  # Anchor the legend to the left of the plot
-            x=1.02,  # Offset the legend slightly outside the plot
-            font=dict(
-                size=12,  # Set font size for the legend
+                # Create a circle marker with the tooltip for each point
+                CircleMarker(
+                    location=[
+                        lat,
+                        lon,
+                    ],  # Position the marker at the point's coordinates
+                    radius=5,
+                    fill=True,
+                    fill_opacity=0.6,
+                    tooltip=tooltip_text,
+                ).add_to(m)
+
+        # Display the map in Streamlit
+        html_str = m._repr_html_()
+        html(html_str, height=600)
+
+        fig = px.scatter(
+            df_clean,  # Data to be plotted
+            x="Aircraft_ID",  # X-axis data (Aircraft ID)
+            y="Altitude",  # Y-axis data (Altitude)
+            color="Aircraft_ID",  # Color the points based on Aircraft ID
+            title="Altitude of each flight for the selected time frame",  # Title of the plot
+            labels={
+                "Altitude": "Altitude (ft)",
+                "Aircraft_ID": "Aircraft ID",
+            },  # Custom axis labels
+            hover_data={
+                "Altitude": True,
+                "Aircraft_ID": True,
+            },  # Display Aircraft ID and Altitude on hover
+        )
+
+        # Customize the legend layout
+        fig.update_layout(
+            legend=dict(
+                title="Aircraft ID",  # Title of the legend
+                orientation="v",  # Vertical orientation of the legend
+                yanchor="top",  # Anchor the legend to the top
+                y=1,  # Position the legend at the top of the plot (Y-axis)
+                xanchor="left",  # Anchor the legend to the left of the plot
+                x=1.02,  # Offset the legend slightly outside the plot
+                font=dict(
+                    size=12,  # Set font size for the legend
+                ),
             ),
-        ),
-        width=800,  # Set the width of the plot
-        height=500,  # Set the height of the plot
-    )
+            width=800,  # Set the width of the plot
+            height=500,  # Set the height of the plot
+        )
 
-    # Add interactivity to highlight selected elements
-    fig.update_traces(
-        marker=dict(size=10, opacity=0.8),  # Customize the markers (size and opacity)
-        selector=dict(mode="markers"),  # Apply these settings to marker traces
-    )
+        # Add interactivity to highlight selected elements
+        fig.update_traces(
+            marker=dict(
+                size=10, opacity=0.8
+            ),  # Customize the markers (size and opacity)
+            selector=dict(mode="markers"),  # Apply these settings to marker traces
+        )
 
-    # Display the plot in Streamlit
-    st.plotly_chart(fig, use_container_width=True)
+        # Display the plot in Streamlit
+        st.plotly_chart(fig, use_container_width=True)
