@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-st.title("IAS data")
+st.title("IAS at Different Altitudes")
 st.write(
     "Here we can see the IAS of departures at 850, 1500 and 3500 ft for both runways"
 )

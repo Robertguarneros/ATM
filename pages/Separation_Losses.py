@@ -21,7 +21,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-st.title("ATM Project - Separation Losses")
+st.title("Separation Losses")
 st.write("Here you can see the distance between flights when taking off.")
 
 # Load data
@@ -815,5 +815,5 @@ try:
         )
         st.altair_chart(sid_group_chart, use_container_width=True)
 
-except Exception as e:
-    st.write("Exception" + e)
+except Exception:
+    st.write("No data available for SID groups.")

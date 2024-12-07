@@ -26,7 +26,7 @@ st.set_page_config(
 )
 
 
-st.title("Turn data")
+st.title("Position and Altitude when Turning")
 st.write("Here we can see info about the turns when departing from runway 24L")
 
 # Load data
