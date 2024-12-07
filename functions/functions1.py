@@ -1,14 +1,16 @@
 # Son los q me ha dicho GPT si hay otros mejores se cambia
-from datetime import timedelta
 import csv
-import pandas as pd
-import numpy as np
 import re
+from datetime import timedelta
+
+import numpy as np
+import pandas as pd
 
 # Constants
 A = 6378137.0  # Semi-major axis in meters
 E2 = 0.00669437999014  # Eccentricity squared for WGS84
 B = 6356752.3142  # Semi-minor axis in meters
+
 
 # Load flight data
 def load_24h(file1, file2, file3, file4, file5, file6):
@@ -17,9 +19,9 @@ def load_24h(file1, file2, file3, file4, file5, file6):
     first_file = True  # Flag to indicate if it's the first file being processed
 
     for file in [file1, file2, file3, file4, file5, file6]:
-        with open(file, 'r', encoding='utf-8') as csvfile:
-            reader = csv.reader(csvfile, delimiter=';')
-            
+        with open(file, "r", encoding="utf-8") as csvfile:
+            reader = csv.reader(csvfile, delimiter=";")
+
             # Skip the header for all files except the first
             if not first_file:
                 next(reader, None)  # Skip the header row
@@ -30,17 +32,22 @@ def load_24h(file1, file2, file3, file4, file5, file6):
             for row in reader:
                 # Replace commas with dots, excluding column 23, and replace 'NV' with 'N/A'
                 processed_row = [
-                    cell.replace(',', '.').replace('NV', 'N/A') if ',' in cell and i != 23 else cell.replace('NV', 'N/A')
+                    (
+                        cell.replace(",", ".").replace("NV", "N/A")
+                        if "," in cell and i != 23
+                        else cell.replace("NV", "N/A")
+                    )
                     for i, cell in enumerate(row)
                 ]
                 matrix.append(processed_row)
-            
+
             # Remove the 25th column (index 24) from each row
             for row in matrix:
                 if len(row) > 24:  # Ensure row has at least 25 columns
                     del row[24]  # Remove the 25th column
 
     return matrix
+
 
 def calculate_rotation_matrix(lat, lon):
     """
@@ -193,21 +200,7 @@ def calculate_distance(U1, V1, U2, V2):
         np.sqrt((U1 - U2) ** 2 + (V1 - V2) ** 2) / 1852
     )  # Return distance in nautical miles
     return distance
-    altitude_in_feet_corrected = 0
-    if BarometricPressureSetting != "N/A":
-        QNH_actual = float(BarometricPressureSetting)
-        QNH_standard = 1013.2
-        if float(FlightLevel) < 60:
-            if 1013 <= QNH_actual <= 1013.3:
-                altitude_in_feet_corrected = float(FlightLevel) * 100
-            else:
-                altitude_in_feet_corrected = (
-                    float(float(FlightLevel) * 100) + (QNH_actual - QNH_standard) * 30
-                )
-                altitude_in_feet_corrected = round(altitude_in_feet_corrected, 2)
-        else:
-            altitude_in_feet_corrected = float(FlightLevel) * 100
-    return altitude_in_feet_corrected
+
 
 # Insert corrected altitude for a file at the last column
 def correct_altitude_for_file(matrix):
@@ -218,7 +211,9 @@ def correct_altitude_for_file(matrix):
 
     # Check if "CorrectedAltitude" already exists in the header
     if "CorrectedAltitude" not in matrix[0]:
-        matrix[0].append("CorrectedAltitude")  # Append the header for the corrected altitude
+        matrix[0].append(
+            "CorrectedAltitude"
+        )  # Append the header for the corrected altitude
 
     # Process each row (skip the header)
     for row in matrix[1:]:
@@ -231,6 +226,7 @@ def correct_altitude_for_file(matrix):
         row.append(corrected_alt)
 
     return matrix
+
 
 # Load DEP file
 def load_departures():
@@ -249,25 +245,30 @@ def load_departures():
 # Load flight data
 def load_flights(file_path):
     # Open the CSV file
-    with open(file_path, 'r', encoding='utf-8') as csvfile:
-        reader = csv.reader(csvfile, delimiter=';')
-        
+    with open(file_path, "r", encoding="utf-8") as csvfile:
+        reader = csv.reader(csvfile, delimiter=";")
+
         # Generate a matrix by reading all rows
         matrix = []
         for row in reader:
             # Replace commas with dots, excluding column 23, and replace 'NV' with 'N/A'
             processed_row = [
-                cell.replace(',', '.').replace('NV', 'N/A') if ',' in cell and i != 23 else cell.replace('NV', 'N/A')
+                (
+                    cell.replace(",", ".").replace("NV", "N/A")
+                    if "," in cell and i != 23
+                    else cell.replace("NV", "N/A")
+                )
                 for i, cell in enumerate(row)
             ]
             matrix.append(processed_row)
-        
+
         # Remove the 25th column (index 24) from each row
         for row in matrix:
             if len(row) > 24:  # Ensure row has at least 25 columns
                 del row[24]  # Remove the 25th column
 
     return matrix
+
 
 # Get trajectory for an airplane
 def get_trajectory_for_airplane(loaded_departures, loaded_flights):
@@ -314,7 +315,6 @@ def get_trajectory_for_airplane(loaded_departures, loaded_flights):
                         "ias": ias,
                     }
                 )
-            
 
     return trajectories
 
@@ -351,8 +351,12 @@ def extract_contiguous_pairs():
     # Función para extraer la base de la SID (antes del número)
     def extract_base_sid(sid):
         # Usamos expresión regular para quitar los números al final de la SID
-        base_sid = re.match(r"([A-Za-z]+)", sid)  # Solo toma letras antes de cualquier número
-        return base_sid.group(0) if base_sid else sid  # Si no encuentra nada, devuelve la SID completa
+        base_sid = re.match(
+            r"([A-Za-z]+)", sid
+        )  # Solo toma letras antes de cualquier número
+        return (
+            base_sid.group(0) if base_sid else sid
+        )  # Si no encuentra nada, devuelve la SID completa
 
     # Iterar sobre las filas para calcular diferencias entre vuelos consecutivos
     for i in range(len(df_sorted) - 1):
@@ -383,22 +387,28 @@ def extract_contiguous_pairs():
         base_sid = extract_base_sid(current_flight["ProcDesp"])
 
         # Añadir información adicional del vuelo a la lista
-        flight_info_list.append({
-            "Indicativo": current_flight["Indicativo"],
-            "Estela": current_flight["Estela"],
-            "TipoAeronave": current_flight["TipoAeronave"],
-            "ProcDesp": base_sid,  # Guardar solo el nombre base de la SID
-        })
+        flight_info_list.append(
+            {
+                "Indicativo": current_flight["Indicativo"],
+                "Estela": current_flight["Estela"],
+                "TipoAeronave": current_flight["TipoAeronave"],
+                "ProcDesp": base_sid,  # Guardar solo el nombre base de la SID
+            }
+        )
 
     # Incluir la información del último vuelo en la lista
     last_flight = df_sorted.iloc[-1]
-    base_sid_last = extract_base_sid(last_flight["ProcDesp"])  # Procesar la SID del último vuelo
-    flight_info_list.append({
-        "Indicativo": last_flight["Indicativo"],
-        "Estela": last_flight["Estela"],
-        "TipoAeronave": last_flight["TipoAeronave"],
-        "ProcDesp": base_sid_last,  # Guardar solo el nombre base de la SID
-    })
+    base_sid_last = extract_base_sid(
+        last_flight["ProcDesp"]
+    )  # Procesar la SID del último vuelo
+    flight_info_list.append(
+        {
+            "Indicativo": last_flight["Indicativo"],
+            "Estela": last_flight["Estela"],
+            "TipoAeronave": last_flight["TipoAeronave"],
+            "ProcDesp": base_sid_last,  # Guardar solo el nombre base de la SID
+        }
+    )
 
     # Convertir la lista de información en un DataFrame
     flight_info = pd.DataFrame(flight_info_list)
@@ -406,21 +416,21 @@ def extract_contiguous_pairs():
     return contiguous_flights_24L, contiguous_flights_06R, flight_info
 
 
-
 def load_data_from_csv(file_path):
     """Carga datos del CSV y devuelve la lista de datos y cabeceras."""
-    df = pd.read_csv(file_path, sep=';', na_values=['N/A'])
+    df = pd.read_csv(file_path, sep=";", na_values=["N/A"])
     data = list(df.values)
     headers = df.columns.tolist()
     return data, headers
-    
+
+
 def compare_radar_separation(contiguous_flights_dist):
     radar_min_separation = 3  # Separación mínima Radar en NM
     results = []
     compliant_pairs = 0  # Contador de parejas que cumplen con el requisito
 
     # Iterar sobre las parejas y sus distancias mínimas
-    for pair, distance in contiguous_flights_dist.items(): 
+    for pair, distance in contiguous_flights_dist.items():
         # Verificar si cumple con la separación mínima del radar
         is_compliant = distance > radar_min_separation
         results.append((pair[0], pair[1], distance, is_compliant))
@@ -428,10 +438,12 @@ def compare_radar_separation(contiguous_flights_dist):
         # Contar cuántas cumplen la condición
         if is_compliant:
             compliant_pairs += 1
-    
+
     # Calcular el porcentaje de cumplimiento
     total_pairs = len(contiguous_flights_dist)
-    compliance_percentage = (compliant_pairs / total_pairs * 100) if total_pairs > 0 else 0
+    compliance_percentage = (
+        (compliant_pairs / total_pairs * 100) if total_pairs > 0 else 0
+    )
 
     return results, compliance_percentage
 
@@ -439,20 +451,20 @@ def compare_radar_separation(contiguous_flights_dist):
 def compare_wake_separation(contiguous_flights_dist, flight_info):
 
     wake_separation_table = {
-        ('Super Pesada', 'Pesada'): 6,
-        ('Super Pesada', 'Media'): 7,
-        ('Super Pesada', 'Ligera'): 8,
-        ('Pesada', 'Pesada'): 4,
-        ('Pesada', 'Media'): 5,
-        ('Pesada', 'Ligera'): 6,
-        ('Media', 'Media'): 3,
-        ('Media', 'Ligera'): 5,
-        ('Ligera', 'Ligera'): 3
+        ("Super Pesada", "Pesada"): 6,
+        ("Super Pesada", "Media"): 7,
+        ("Super Pesada", "Ligera"): 8,
+        ("Pesada", "Pesada"): 4,
+        ("Pesada", "Media"): 5,
+        ("Pesada", "Ligera"): 6,
+        ("Media", "Media"): 3,
+        ("Media", "Ligera"): 5,
+        ("Ligera", "Ligera"): 3,
     }
 
     # Crear un diccionario con la estela de cada indicativo
     estela_by_indicativo = flight_info.set_index("Indicativo")["Estela"].to_dict()
-    
+
     results = []
     compliant_pairs = 0  # Contador de parejas que cumplen la condición
 
@@ -460,29 +472,44 @@ def compare_wake_separation(contiguous_flights_dist, flight_info):
         ti_1, ti_2 = pair
 
         # Obtener los tipos de aeronave para ambos vuelos
-        wake_class_1 = estela_by_indicativo.get(ti_1, 'Desconocido')
-        wake_class_2 = estela_by_indicativo.get(ti_2, 'Desconocido')
+        wake_class_1 = estela_by_indicativo.get(ti_1, "Desconocido")
+        wake_class_2 = estela_by_indicativo.get(ti_2, "Desconocido")
 
         # Buscar la separación mínima de estela basada en el tipo de aeronave
-        wake_min_separation = wake_separation_table.get((wake_class_1, wake_class_2), None)
+        wake_min_separation = wake_separation_table.get(
+            (wake_class_1, wake_class_2), None
+        )
 
         # Verificar si la distancia mínima cumple con la separación por estela
         is_compliant = False
         if wake_min_separation is not None and min_distance > wake_min_separation:
             is_compliant = True
-        
+
         # Agregar el resultado con la distancia mínima, tipos de aeronave y si cumple o no
-        results.append((ti_1, ti_2, min_distance, f"{wake_class_1}", f"{wake_class_2}", wake_min_separation, is_compliant))
+        results.append(
+            (
+                ti_1,
+                ti_2,
+                min_distance,
+                f"{wake_class_1}",
+                f"{wake_class_2}",
+                wake_min_separation,
+                is_compliant,
+            )
+        )
 
         # Contar cuántas parejas cumplen con la condición
         if is_compliant:
             compliant_pairs += 1
-    
+
     # Calcular el porcentaje de cumplimiento
     total_pairs = len(contiguous_flights_dist)
-    compliance_percentage = (compliant_pairs / total_pairs * 100) if total_pairs > 0 else 0
+    compliance_percentage = (
+        (compliant_pairs / total_pairs * 100) if total_pairs > 0 else 0
+    )
 
     return results, compliance_percentage
+
 
 def compare_loa_separation(contiguous_flights_dist, flight_info):
 
@@ -491,20 +518,20 @@ def compare_loa_separation(contiguous_flights_dist, flight_info):
     sid_06R_df = pd.read_excel("assets/InputFiles/Tabla_misma_SID_06R.xlsx")
 
     sid_groups_24L = {
-        sid.split('-')[0]: col  # Extraer la base de la SID y asignar el grupo
+        sid.split("-")[0]: col  # Extraer la base de la SID y asignar el grupo
         for col in sid_24L_df.columns
         for sid in sid_24L_df[col].dropna()
     }
 
     sid_groups_06R = {
-        sid.split('-')[0]: col
+        sid.split("-")[0]: col
         for col in sid_06R_df.columns
         for sid in sid_06R_df[col].dropna()
     }
 
     # Función para determinar el grupo de una SID
     def get_sid_group(sid):
-        base = sid.split('-')[0]
+        base = sid.split("-")[0]
         return sid_groups_24L.get(base) or sid_groups_06R.get(base) or "Sin Grupo"
 
     # Función para determinar si dos SIDs están en el mismo grupo
@@ -527,7 +554,6 @@ def compare_loa_separation(contiguous_flights_dist, flight_info):
         ("HP", "NR-", "Distinta"): 3,
         ("HP", "NR", "Misma"): 3,
         ("HP", "NR", "Distinta"): 3,
-
         ("R", "HP", "Misma"): 7,
         ("R", "HP", "Distinta"): 5,
         ("R", "R", "Misma"): 5,
@@ -540,7 +566,6 @@ def compare_loa_separation(contiguous_flights_dist, flight_info):
         ("R", "NR-", "Distinta"): 3,
         ("R", "NR", "Misma"): 3,
         ("R", "NR", "Distinta"): 3,
-
         ("LP", "HP", "Misma"): 8,
         ("LP", "HP", "Distinta"): 6,
         ("LP", "R", "Misma"): 6,
@@ -553,7 +578,6 @@ def compare_loa_separation(contiguous_flights_dist, flight_info):
         ("LP", "NR-", "Distinta"): 3,
         ("LP", "NR", "Misma"): 3,
         ("LP", "NR", "Distinta"): 3,
-
         ("NR+", "HP", "Misma"): 11,
         ("NR+", "HP", "Distinta"): 8,
         ("NR+", "R", "Misma"): 9,
@@ -566,7 +590,6 @@ def compare_loa_separation(contiguous_flights_dist, flight_info):
         ("NR+", "NR-", "Distinta"): 3,
         ("NR+", "NR", "Misma"): 3,
         ("NR+", "NR", "Distinta"): 3,
-
         ("NR-", "HP", "Misma"): 9,
         ("NR-", "HP", "Distinta"): 9,
         ("NR-", "R", "Misma"): 9,
@@ -579,7 +602,6 @@ def compare_loa_separation(contiguous_flights_dist, flight_info):
         ("NR-", "NR-", "Distinta"): 3,
         ("NR-", "NR", "Misma"): 3,
         ("NR-", "NR", "Distinta"): 3,
-
         ("NR", "HP", "Misma"): 9,
         ("NR", "HP", "Distinta"): 9,
         ("NR", "R", "Misma"): 9,
@@ -595,11 +617,15 @@ def compare_loa_separation(contiguous_flights_dist, flight_info):
     }
 
     # Diccionarios con tipo de aeronave y procedimientos de despegue por indicativo
-    tipoAeronave_by_indicativo = flight_info.set_index("Indicativo")["TipoAeronave"].to_dict()
+    tipoAeronave_by_indicativo = flight_info.set_index("Indicativo")[
+        "TipoAeronave"
+    ].to_dict()
     proc_desp_by_indicativo = flight_info.set_index("Indicativo")["ProcDesp"].to_dict()
 
     # Definir las categorías directamente
-    aircraft_classification = pd.read_excel("assets/InputFiles/Tabla_Clasificacion_aeronaves.xlsx")
+    aircraft_classification = pd.read_excel(
+        "assets/InputFiles/Tabla_Clasificacion_aeronaves.xlsx"
+    )
     categories = {
         "HP": set(aircraft_classification["HP"].dropna().tolist()),
         "NR": set(aircraft_classification["NR"].dropna().tolist()),
@@ -625,8 +651,12 @@ def compare_loa_separation(contiguous_flights_dist, flight_info):
             continue  # Si hay algún dato desconocido, omitimos esta pareja
 
         # Clasificar las aeronaves directamente
-        category_1 = next((cat for cat, types in categories.items() if tipo_1 in types), "R")
-        category_2 = next((cat for cat, types in categories.items() if tipo_2 in types), "R")
+        category_1 = next(
+            (cat for cat, types in categories.items() if tipo_1 in types), "R"
+        )
+        category_2 = next(
+            (cat for cat, types in categories.items() if tipo_2 in types), "R"
+        )
 
         # Determinar si están en el mismo grupo de SID
         same_sid = "Misma" if are_sids_in_same_group(sid_1, sid_2) else "Distinta"
@@ -644,36 +674,53 @@ def compare_loa_separation(contiguous_flights_dist, flight_info):
             compliant_pairs += 1
 
         # Agregar los resultados
-        results.append((ti_1, ti_2, min_distance, category_1, category_2, min_separation, same_sid, group_2, is_compliant))
+        results.append(
+            (
+                ti_1,
+                ti_2,
+                min_distance,
+                category_1,
+                category_2,
+                min_separation,
+                same_sid,
+                group_2,
+                is_compliant,
+            )
+        )
 
     # Calcular el porcentaje de cumplimiento
     total_pairs = len(contiguous_flights_dist)
-    compliance_percentage = (compliant_pairs / total_pairs) * 100 if total_pairs > 0 else 0
+    compliance_percentage = (
+        (compliant_pairs / total_pairs) * 100 if total_pairs > 0 else 0
+    )
 
     return results, compliance_percentage
 
 
-
-def calculate_min_distances(loaded_departures, loaded_flights, contiguous_flights_24L, contiguous_flights_06R):
+def calculate_min_distances(
+    loaded_departures, loaded_flights, contiguous_flights_24L, contiguous_flights_06R
+):
     """
     Calcula las distancias mínimas entre pares de vuelos utilizando trayectorias procesadas.
     """
     # Obtener las trayectorias completas de los vuelos
     trajectories = get_trajectory_for_airplane(loaded_departures, loaded_flights)
-    trajectories = filter_empty_trajectories(trajectories)  # Filtrar trayectorias vacías
+    trajectories = filter_empty_trajectories(
+        trajectories
+    )  # Filtrar trayectorias vacías
 
     # Definir las áreas de los umbrales como cajas delimitadoras
     threshold_06R_area = {
         "min_lat": 41.291979,  # Bottom latitude
         "max_lat": 41.293154,  # Top latitude
-        "min_lon": 2.103089,   # Left longitude
-        "max_lon": 2.105704    # Right longitude
+        "min_lon": 2.103089,  # Left longitude
+        "max_lon": 2.105704,  # Right longitude
     }
     threshold_24L_area = {
         "min_lat": 41.281430,  # Bottom latitude
         "max_lat": 41.282578,  # Top latitude
-        "min_lon": 2.072046,   # Left longitude
-        "max_lon": 2.074564    # Right longitude
+        "min_lon": 2.072046,  # Left longitude
+        "max_lon": 2.074564,  # Right longitude
     }
 
     results_24L = {}
@@ -690,7 +737,7 @@ def calculate_min_distances(loaded_departures, loaded_flights, contiguous_flight
     def calculate_distances_for_pairs(pairs, threshold_area, results):
         for pair in pairs:
             plane1, plane2 = pair
-            min_distance = float('inf')
+            min_distance = float("inf")
             found = False
 
             # Obtener las trayectorias para ambos vuelos
@@ -698,8 +745,8 @@ def calculate_min_distances(loaded_departures, loaded_flights, contiguous_flight
             traj2 = trajectories.get(plane2, [])
 
             # Indexar las trayectorias por tiempo para emparejarlas
-            traj1_by_time = {float(point['time']): point for point in traj1}
-            traj2_by_time = {float(point['time']): point for point in traj2}
+            traj1_by_time = {float(point["time"]): point for point in traj1}
+            traj2_by_time = {float(point["time"]): point for point in traj2}
 
             # Buscar tiempos comunes
             common_times = set(traj1_by_time.keys()) & set(traj2_by_time.keys())
@@ -709,8 +756,16 @@ def calculate_min_distances(loaded_departures, loaded_flights, contiguous_flight
                 point_2 = traj2_by_time[time]
 
                 # Convertir coordenadas y alturas a flotantes
-                lat_1, lon_1, h_1 = float(point_1['latitude']), float(point_1['longitude']), float(point_1['height'])
-                lat_2, lon_2, h_2 = float(point_2['latitude']), float(point_2['longitude']), float(point_2['height'])
+                lat_1, lon_1, h_1 = (
+                    float(point_1["latitude"]),
+                    float(point_1["longitude"]),
+                    float(point_1["height"]),
+                )
+                lat_2, lon_2, h_2 = (
+                    float(point_2["latitude"]),
+                    float(point_2["longitude"]),
+                    float(point_2["height"]),
+                )
 
                 # Ignorar si el segundo vuelo está dentro del área del umbral
                 if is_within_area(lat_2, lon_2, threshold_area):
@@ -722,42 +777,47 @@ def calculate_min_distances(loaded_departures, loaded_flights, contiguous_flight
 
                 # Calcular distancia
                 dist = calculate_distance(
-                    coords_1['U'], coords_1['V'], coords_2['U'], coords_2['V']
+                    coords_1["U"], coords_1["V"], coords_2["U"], coords_2["V"]
                 ).item()
 
                 min_distance = min(min_distance, dist)
                 found = True
 
-            if found and min_distance != float('inf'):
+            if found and min_distance != float("inf"):
                 results[pair] = min_distance
 
     # Procesar cada conjunto de vuelos para las pistas
-    calculate_distances_for_pairs(contiguous_flights_24L, threshold_24L_area, results_24L)
-    calculate_distances_for_pairs(contiguous_flights_06R, threshold_06R_area, results_06R)
+    calculate_distances_for_pairs(
+        contiguous_flights_24L, threshold_24L_area, results_24L
+    )
+    calculate_distances_for_pairs(
+        contiguous_flights_06R, threshold_06R_area, results_06R
+    )
 
     return results_24L, results_06R
 
 
 def general(file_path):
-    
-    #Funciones
+
+    # Funciones
     csv_file = file_path
-    contiguous_flights_24L, contiguous_flights_06R, flight_info = extract_contiguous_pairs()
+    contiguous_flights_24L, contiguous_flights_06R, flight_info = (
+        extract_contiguous_pairs()
+    )
     dep = load_departures()
     csv_file_alt = correct_altitude_for_file(csv_file)
-    results_24L, results_06R = calculate_min_distances(dep, csv_file_alt, contiguous_flights_24L, contiguous_flights_06R)
+    results_24L, results_06R = calculate_min_distances(
+        dep, csv_file_alt, contiguous_flights_24L, contiguous_flights_06R
+    )
 
     return results_24L, results_06R, flight_info
 
 
-
-
-
-'''
+"""
 file_path = "assets/CsvFiles/P3_04_08h.csv"
 results_24L, results_06R, flight_info = general(file_path)
 # Poner la funcion q sea para ver la salida
 results, compliance_percentage = compare_loa_separation(results_24L, flight_info) # flight_info    en caso de utilizar el wake oel loa
 print(results)
 print(compliance_percentage)
-'''
+"""

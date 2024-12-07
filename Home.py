@@ -1,5 +1,5 @@
-import streamlit as st
 import altair as alt
+import streamlit as st
 
 # Streamlit page configuration
 st.set_page_config(
@@ -15,7 +15,8 @@ st.title("Welcome to the ATM Project!")
 alt.themes.enable("dark")
 
 # Add markdown text for objectives
-st.markdown("""
+st.markdown(
+    """
 ## Objectives
 
 - Show statistics about the separation between flights and whether or not the separation requirements are fulfilled:
@@ -27,6 +28,9 @@ st.markdown("""
 - Show IAS of departures at 850, 1500, and 3500 ft for both runways.
 - Altitude corrected and IAS of traffic at threshold when departing at 24L and 06R.
 - Horizontal (stereographical) distance from departures to TMR-40 when departing from 24L.
-""")
+"""
+)
 
-st.write("On the right sidebar, you can navigate to the different sections of the project to view the statistics and visualizations.")
+st.write(
+    "On the left sidebar, you can navigate to the different sections of the project to view the statistics and visualizations."
+)

@@ -1,5 +1,4 @@
 import streamlit as st
-import altair as alt
 
 # Streamlit page configuration
 st.set_page_config(
@@ -10,13 +9,14 @@ st.set_page_config(
 )
 
 # Page title
-st.markdown("""
+st.markdown(
+    """
 # About the ATM Project
 This project was developed for PGTA in QT-2024 by Group 8:
 - Roberto Guarneros
 - Angela Nuñez
 - David Gracia
-            
-For more information visit the [GitHub repository](https://github.com/Robertguarneros/ATM.git)
-""")
 
+For more information visit the [GitHub repository](https://github.com/Robertguarneros/ATM.git)
+"""
+)

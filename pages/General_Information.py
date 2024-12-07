@@ -1,16 +1,16 @@
-import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.graph_objects as go
+import streamlit as st
+
 from functions.functions3 import (
+    correct_altitude_for_file,
+    filter_departures_by_runway,
+    filter_empty_trajectories,
+    filter_trajectories_by_runway,
+    get_trajectory_for_airplane,
+    load_24h,
     load_departures,
     load_flights,
-    load_24h,
-    get_trajectory_for_airplane,
-    filter_empty_trajectories,
-    filter_departures_by_runway,
-    correct_altitude_for_file,
-    filter_trajectories_by_runway
 )
 
 # Streamlit page configuration
@@ -36,7 +36,7 @@ loaded_all_flights = load_24h(
     "assets/CsvFiles/P3_08_12h.csv",
     "assets/CsvFiles/P3_12_16h.csv",
     "assets/CsvFiles/P3_16_20h.csv",
-    "assets/CsvFiles/P3_20_24h.csv"
+    "assets/CsvFiles/P3_20_24h.csv",
 )
 
 # Time frame selector
@@ -50,11 +50,15 @@ time_frame_options = {
     "From 20:00 to 24:00": loaded_flights_20_24,
     "Whole Day": loaded_all_flights,
 }
-selected_time_frame = st.sidebar.selectbox("Select Time Frame", list(time_frame_options.keys()))
+selected_time_frame = st.sidebar.selectbox(
+    "Select Time Frame", list(time_frame_options.keys())
+)
 selected_flights = time_frame_options[selected_time_frame]
 
 # Process data
-departures_6R, departures_24L = filter_departures_by_runway(loaded_departures, selected_flights)
+departures_6R, departures_24L = filter_departures_by_runway(
+    loaded_departures, selected_flights
+)
 corrected_alitude_matrix = correct_altitude_for_file(selected_flights)
 trajectories = get_trajectory_for_airplane(loaded_departures, corrected_alitude_matrix)
 filtered_trajectories = filter_empty_trajectories(trajectories)
@@ -68,7 +72,7 @@ results = {**filtered_trajectories_24L, **filtered_trajectories_06R}
 runway_options = {
     "24L": filtered_trajectories_24L,
     "06R": filtered_trajectories_06R,
-    "All runways": results
+    "All runways": results,
 }
 
 st.divider()
@@ -80,7 +84,9 @@ flight_counts = {
     "06R": len(filtered_trajectories_06R),
 }
 fig_pie = go.Figure(
-    data=[go.Pie(labels=list(flight_counts.keys()), values=list(flight_counts.values()))]
+    data=[
+        go.Pie(labels=list(flight_counts.keys()), values=list(flight_counts.values()))
+    ]
 )
 fig_pie.update_layout(title="Distribution of Flights per Runway")
 st.plotly_chart(fig_pie, use_container_width=True)
@@ -122,7 +128,9 @@ selected_runway = st.selectbox("Select Runway", list(runway_options.keys()))
 selected_runway_results = runway_options[selected_runway]
 # Handle case when there are no flights
 if not selected_runway_results:
-    st.warning("No flight trajectories available for the selected runway and time frame.")
+    st.warning(
+        "No flight trajectories available for the selected runway and time frame."
+    )
 else:
     # Plotly Visualization
     fig = go.Figure()
@@ -145,16 +153,19 @@ else:
     # Update map layout
     # Update map layout with a specific size
     fig.update_layout(
-    mapbox=dict(
-        style="carto-positron",  # Light map style
-        center={"lat": 41.298123, "lon": 2.080165},  # Center map at Barcelona Airport
-        zoom=10,
-    ),
-    margin={"r": 0, "t": 0, "l": 0, "b": 0},
-    width=1200,  # Set the desired width of the map
-    height=600,  # Set the desired height of the map
-    showlegend=True,
-)
+        mapbox=dict(
+            style="carto-positron",  # Light map style
+            center={
+                "lat": 41.298123,
+                "lon": 2.080165,
+            },  # Center map at Barcelona Airport
+            zoom=10,
+        ),
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+        width=1200,  # Set the desired width of the map
+        height=600,  # Set the desired height of the map
+        showlegend=True,
+    )
 
     # Display the map
     st.plotly_chart(fig, use_container_width=True)

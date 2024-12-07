@@ -1,8 +1,9 @@
 import csv
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
-from datetime import datetime
+
 
 # Load DEP file
 def load_departures(file_path):
@@ -15,29 +16,33 @@ def load_departures(file_path):
     return matrix
 
 
-
 # Load flight data
 def load_flights(file_path):
     # Open the CSV file
-    with open(file_path, 'r', encoding='utf-8') as csvfile:
-        reader = csv.reader(csvfile, delimiter=';')
-        
+    with open(file_path, "r", encoding="utf-8") as csvfile:
+        reader = csv.reader(csvfile, delimiter=";")
+
         # Generate a matrix by reading all rows
         matrix = []
         for row in reader:
             # Replace commas with dots, excluding column 23, and replace 'NV' with 'N/A'
             processed_row = [
-                cell.replace(',', '.').replace('NV', 'N/A') if ',' in cell and i != 23 else cell.replace('NV', 'N/A')
+                (
+                    cell.replace(",", ".").replace("NV", "N/A")
+                    if "," in cell and i != 23
+                    else cell.replace("NV", "N/A")
+                )
                 for i, cell in enumerate(row)
             ]
             matrix.append(processed_row)
-        
+
         # Remove the 25th column (index 24) from each row
         for row in matrix:
             if len(row) > 24:  # Ensure row has at least 25 columns
                 del row[24]  # Remove the 25th column
 
     return matrix
+
 
 # Load flight data
 def load_24h(file1, file2, file3, file4, file5, file6):
@@ -46,9 +51,9 @@ def load_24h(file1, file2, file3, file4, file5, file6):
     first_file = True  # Flag to indicate if it's the first file being processed
 
     for file in [file1, file2, file3, file4, file5, file6]:
-        with open(file, 'r', encoding='utf-8') as csvfile:
-            reader = csv.reader(csvfile, delimiter=';')
-            
+        with open(file, "r", encoding="utf-8") as csvfile:
+            reader = csv.reader(csvfile, delimiter=";")
+
             # Skip the header for all files except the first
             if not first_file:
                 next(reader, None)  # Skip the header row
@@ -59,17 +64,22 @@ def load_24h(file1, file2, file3, file4, file5, file6):
             for row in reader:
                 # Replace commas with dots, excluding column 23, and replace 'NV' with 'N/A'
                 processed_row = [
-                    cell.replace(',', '.').replace('NV', 'N/A') if ',' in cell and i != 23 else cell.replace('NV', 'N/A')
+                    (
+                        cell.replace(",", ".").replace("NV", "N/A")
+                        if "," in cell and i != 23
+                        else cell.replace("NV", "N/A")
+                    )
                     for i, cell in enumerate(row)
                 ]
                 matrix.append(processed_row)
-            
+
             # Remove the 25th column (index 24) from each row
             for row in matrix:
                 if len(row) > 24:  # Ensure row has at least 25 columns
                     del row[24]  # Remove the 25th column
 
     return matrix
+
 
 def load_files(departures_file, flights_file):
     loaded_departures = load_departures(departures_file)
@@ -94,6 +104,7 @@ def corrected_altitude(BarometricPressureSetting, FlightLevel):
             altitude_in_feet_corrected = float(FlightLevel) * 100
     return altitude_in_feet_corrected
 
+
 def correct_altitude_for_file(matrix):
     # Add a column that has the corrected altitude
     # Find the column indices for BP (Barometric Pressure) and FL (Flight Level)
@@ -112,6 +123,7 @@ def correct_altitude_for_file(matrix):
 
     return matrix
 
+
 def get_trajectory_for_airplane(loaded_departures, loaded_flights):
     # Find the relevant column indices
     indicativo_index = loaded_departures[0].index("Indicativo")
@@ -120,9 +132,9 @@ def get_trajectory_for_airplane(loaded_departures, loaded_flights):
     lat_index = loaded_flights[0].index("LAT")
     lon_index = loaded_flights[0].index("LON")
     h_index = loaded_flights[0].index("H")
-    ra_idx = loaded_flights[0].index('RA')  # Roll Angle
-    heading_idx = loaded_flights[0].index('HEADING')  # Heading
-    tta_idx = loaded_flights[0].index('TTA')  # True Track Angle
+    ra_idx = loaded_flights[0].index("RA")  # Roll Angle
+    heading_idx = loaded_flights[0].index("HEADING")  # Heading
+    tta_idx = loaded_flights[0].index("TTA")  # True Track Angle
     corrected_altitude_index = loaded_flights[0].index("CorrectedAltitude")
     ias_index = loaded_flights[0].index("IAS")
 
@@ -165,9 +177,9 @@ def get_trajectory_for_airplane(loaded_departures, loaded_flights):
                         "ias": ias,
                     }
                 )
-            
 
     return trajectories
+
 
 def filter_empty_trajectories(trajectories):
     # Create a new dictionary containing only flights with non-empty trajectories
@@ -178,6 +190,7 @@ def filter_empty_trajectories(trajectories):
     }
     return filtered_empty_trajectories
 
+
 def filter_trajectories_24L(interpolated_trajectories, departures_24L):
     # Filtrar las trayectorias basadas en las pistas
     filtered_trajectories_24L = {}
@@ -187,13 +200,17 @@ def filter_trajectories_24L(interpolated_trajectories, departures_24L):
 
         if flight_id in [x[0] for x in departures_24L]:  # Salidas en pista 24L
             # Filtrar la trayectoria para que el tiempo de cada punto sea <= 5 minutos antes de la hora de despegue
-            departure_time = next((row[1] for row in departures_24L if row[0] == flight_id), None)
+            departure_time = next(
+                (row[1] for row in departures_24L if row[0] == flight_id), None
+            )
             if departure_time:
 
                 # Filtrar los puntos de la trayectoria
                 filtered_trajectory = []
                 for point in trajectory:
-                    trajectory_time = float(point['time'])  # Suponiendo que el tiempo está en segundos
+                    trajectory_time = float(
+                        point["time"]
+                    )  # Suponiendo que el tiempo está en segundos
                     # Comprobar si el tiempo de la trayectoria está al menos 5 minutos antes del tiempo de despegue
                     if departure_time - 300 <= trajectory_time <= departure_time + 100:
                         filtered_trajectory.append(point)
@@ -203,7 +220,7 @@ def filter_trajectories_24L(interpolated_trajectories, departures_24L):
                     filtered_trajectories_24L[flight_id] = filtered_trajectory
 
     return filtered_trajectories_24L
-    
+
 
 def filter_departures_by_runway(departures_matrix, flights_matrix):
     # Returns a list of TIs corresponding to a runway
@@ -212,13 +229,13 @@ def filter_departures_by_runway(departures_matrix, flights_matrix):
     flights_header = flights_matrix[0]
 
     # Find the index of relevant columns in the departures matrix
-    pista_desp_index = departures_header.index('PistaDesp')
-    indicativo_index = departures_header.index('Indicativo')
-    time_departure_index = departures_header.index('HoraDespegue')
+    pista_desp_index = departures_header.index("PistaDesp")
+    indicativo_index = departures_header.index("Indicativo")
+    time_departure_index = departures_header.index("HoraDespegue")
 
     # Find the index of relevant columns in the flights matrix
-    ta_index = flights_header.index('TI')
-    time_index = flights_header.index('TIME(s)')
+    ta_index = flights_header.index("TI")
+    time_index = flights_header.index("TIME(s)")
 
     reference_time = float(flights_matrix[1][time_index])
 
@@ -239,11 +256,11 @@ def filter_departures_by_runway(departures_matrix, flights_matrix):
 
         # Check if the flight matches a TI in the flights matrix
         if indicativo in flight_ti_set:
-            if(hora_despegue >= reference_time):
-                if pista_desp == 'LEBL-06R':
+            if hora_despegue >= reference_time:
+                if pista_desp == "LEBL-06R":
                     # Store indicativo and hora_despegue as a tuple
                     matching_departures_6R.append((indicativo, hora_despegue))
-                elif pista_desp == 'LEBL-24L':
+                elif pista_desp == "LEBL-24L":
                     # Store indicativo and hora_despegue as a tuple
                     matching_departures_24L.append((indicativo, hora_despegue))
 
@@ -258,7 +275,7 @@ def detect_turn_start_from_runway_24L(interpolated_trajectories):
     for aircraft_id, rows in interpolated_trajectories.items():
         if len(rows) < 4:  # Ensure there are enough points to compare
             continue
-        
+
         heading_change_accumulated = 0  # To accumulate heading changes
         roll_angle_change_accumulated = 0  # To accumulate roll angle changes
         tta_change_accumulated = 0  # To accumulate TTA changes
@@ -268,24 +285,24 @@ def detect_turn_start_from_runway_24L(interpolated_trajectories):
             current_row = rows[i]
 
             # Skip if the altitude is too low (indicating the aircraft is still on the ground)
-            if float(current_row['corrected_altitude']) < 390:
+            if float(current_row["corrected_altitude"]) < 390:
                 continue
 
             try:
-                ra = float(current_row['ra'])  # Roll angle
-                tta = float(current_row['tta'])  # Turn-To Angle
-                heading = float(current_row['heading'])  # Heading
+                ra = float(current_row["ra"])  # Roll angle
+                tta = float(current_row["tta"])  # Turn-To Angle
+                heading = float(current_row["heading"])  # Heading
             except ValueError:
                 continue
 
             # Checking for significant change in heading, roll angle and TTA
             if i >= 4:  # Only start comparing after 4 points (2 seconds)
                 prev_row = rows[i - 4]  # Get the previous data point (2 seconds before)
-                
+
                 try:
-                    prev_ra = float(prev_row['ra'])
-                    prev_tta = float(prev_row['tta'])
-                    prev_heading = float(prev_row['heading'])
+                    prev_ra = float(prev_row["ra"])
+                    prev_tta = float(prev_row["tta"])
+                    prev_heading = float(prev_row["heading"])
                 except ValueError:
                     continue
 
@@ -300,13 +317,17 @@ def detect_turn_start_from_runway_24L(interpolated_trajectories):
                 tta_change_accumulated += tta_change
 
                 # Check if the accumulated change exceeds a certain threshold
-                if (heading_change_accumulated > 8 or  # Total accumulated heading change over time
-                    roll_angle_change_accumulated > 5 or  # Total accumulated roll angle change
-                    tta_change_accumulated > 15):  # Total accumulated TTA change
+                if (
+                    heading_change_accumulated
+                    > 8  # Total accumulated heading change over time
+                    or roll_angle_change_accumulated
+                    > 5  # Total accumulated roll angle change
+                    or tta_change_accumulated > 15
+                ):  # Total accumulated TTA change
                     # The aircraft has started the turn
-                    lat = current_row['latitude']
-                    lon = current_row['longitude']
-                    alt = current_row['corrected_altitude']
+                    lat = current_row["latitude"]
+                    lon = current_row["longitude"]
+                    alt = current_row["corrected_altitude"]
                     aircraft_turns[aircraft_id] = (aircraft_id, lat, lon, alt)
                     detected_turn = True
                     break  # We found the first point where the turn starts
@@ -322,11 +343,13 @@ def detect_turn_start_from_runway_24L(interpolated_trajectories):
 def side_of_line(p, p1, p2):
     return (p[1] - p1[1]) * (p2[0] - p1[0]) - (p[0] - p1[0]) * (p2[1] - p1[1])
 
+
 def dms_to_decimal(degrees, minutes, seconds):
-    return degrees + (minutes / 60) + (seconds / 3600)    
+    return degrees + (minutes / 60) + (seconds / 3600)
+
 
 def crosses_fixed_radial(trajectories):
-    """ Determines if the trajectories of planes cross the 234 BCN radial  """
+    """Determines if the trajectories of planes cross the 234 BCN radial"""
 
     # Coordenadas DVOR BCN
     lat_dvor_bcn = dms_to_decimal(41, 18, 25.6)
@@ -337,8 +360,7 @@ def crosses_fixed_radial(trajectories):
     lon_punto_costas = dms_to_decimal(2, 2, 0.0)
 
     point1 = [lat_dvor_bcn, lon_dvor_bcn]
-    point2 = [lat_punto_costas, lon_punto_costas] 
-    
+    point2 = [lat_punto_costas, lon_punto_costas]
 
     results = {}
 
@@ -347,32 +369,37 @@ def crosses_fixed_radial(trajectories):
             # If there are not enough points, the trajectory cannot cross the radial
             results[plane_id] = False
             continue
-        
+
         crossed = False
         for i in range(len(trajectory) - 1):
             # Filtrar por puntos bajo 500 ft
-            current_altitude = float(trajectory[i]['corrected_altitude'])
-            next_altitude = float(trajectory[i + 1]['corrected_altitude'])
-
+            current_altitude = float(trajectory[i]["corrected_altitude"])
             if current_altitude < 50:
-                continue  
-            
+                continue
+
             # Current and next point in the trajectory
-            current_point = (float(trajectory[i]['latitude']), float(trajectory[i]['longitude']))
-            next_point = (float(trajectory[i + 1]['latitude']), float(trajectory[i + 1]['longitude']))
+            current_point = (
+                float(trajectory[i]["latitude"]),
+                float(trajectory[i]["longitude"]),
+            )
+            next_point = (
+                float(trajectory[i + 1]["latitude"]),
+                float(trajectory[i + 1]["longitude"]),
+            )
 
             # Calculate the side of each point relative to the line
             side1 = side_of_line(current_point, point1, point2)
             side2 = side_of_line(next_point, point1, point2)
-                
+
             # If the signs change, the trajectory crosses the radial
             if side1 * side2 < 0:
                 crossed = True
                 break
-            
+
         results[plane_id] = crossed
 
     return results
+
 
 def interpolate_trajectories(filtered_trajectories):
     """
@@ -392,20 +419,32 @@ def interpolate_trajectories(filtered_trajectories):
         if len(points) < 2:
             # Skip flights with less than 2 points (cannot interpolate)
             continue
-        
+
         try:
             # Extract original times and trajectory values
             original_times = np.array([float(point["time"]) for point in points])
             latitudes = np.array([float(point["latitude"]) for point in points])
             longitudes = np.array([float(point["longitude"]) for point in points])
             altitudes = np.array([float(point["height"]) for point in points])
-            corrected_altitudes = np.array([float(point["corrected_altitude"]) for point in points])
+            corrected_altitudes = np.array(
+                [float(point["corrected_altitude"]) for point in points]
+            )
             ias = np.array([float(point["ias"]) for point in points])
             heading = np.array([float(point["heading"]) for point in points])
 
             # Extract the RA and TTA, handling missing values (every 16s only)
-            ra = np.array([float(point["ra"]) if point["ra"] != "N/A" else np.nan for point in points])
-            tta = np.array([float(point["tta"]) if point["tta"] != "N/A" else np.nan for point in points])
+            ra = np.array(
+                [
+                    float(point["ra"]) if point["ra"] != "N/A" else np.nan
+                    for point in points
+                ]
+            )
+            tta = np.array(
+                [
+                    float(point["tta"]) if point["tta"] != "N/A" else np.nan
+                    for point in points
+                ]
+            )
 
             # Identify the indices where `ra` and `tta` are valid
             valid_indices = ~np.isnan(ra)
@@ -414,34 +453,52 @@ def interpolate_trajectories(filtered_trajectories):
             valid_tta = tta[valid_indices]
 
             # Create new time range (0.5-second intervals)
-            interpolated_times = np.arange(original_times[0], original_times[-1] + 0.5, 0.5)
+            interpolated_times = np.arange(
+                original_times[0], original_times[-1] + 0.5, 0.5
+            )
 
             # Interpolate latitude, longitude, altitude, and corrected altitude
-            interpolated_latitudes = np.interp(interpolated_times, original_times, latitudes)
-            interpolated_longitudes = np.interp(interpolated_times, original_times, longitudes)
-            interpolated_altitudes = np.interp(interpolated_times, original_times, altitudes)
-            interpolated_corrected_altitudes = np.interp(interpolated_times, original_times, corrected_altitudes)
+            interpolated_latitudes = np.interp(
+                interpolated_times, original_times, latitudes
+            )
+            interpolated_longitudes = np.interp(
+                interpolated_times, original_times, longitudes
+            )
+            interpolated_altitudes = np.interp(
+                interpolated_times, original_times, altitudes
+            )
+            interpolated_corrected_altitudes = np.interp(
+                interpolated_times, original_times, corrected_altitudes
+            )
             interpolated_ias = np.interp(interpolated_times, original_times, ias)
-            interpolated_heading = np.interp(interpolated_times, original_times, heading)
+            interpolated_heading = np.interp(
+                interpolated_times, original_times, heading
+            )
 
             # Interpolate RA and TTA only between valid times
-            interpolated_ra = np.interp(interpolated_times, valid_times_ra_tta, valid_ra)
-            interpolated_tta = np.interp(interpolated_times, valid_times_ra_tta, valid_tta)
+            interpolated_ra = np.interp(
+                interpolated_times, valid_times_ra_tta, valid_ra
+            )
+            interpolated_tta = np.interp(
+                interpolated_times, valid_times_ra_tta, valid_tta
+            )
 
             # Create interpolated trajectory points
             interpolated_points = []
             for i, t in enumerate(interpolated_times):
-                interpolated_points.append({
-                    "time": t,
-                    "latitude": interpolated_latitudes[i],
-                    "longitude": interpolated_longitudes[i],
-                    "height": interpolated_altitudes[i],
-                    "corrected_altitude": interpolated_corrected_altitudes[i],
-                    "ias": interpolated_ias[i],
-                    "heading": interpolated_heading[i],
-                    "ra": interpolated_ra[i],
-                    "tta": interpolated_tta[i]
-                })
+                interpolated_points.append(
+                    {
+                        "time": t,
+                        "latitude": interpolated_latitudes[i],
+                        "longitude": interpolated_longitudes[i],
+                        "height": interpolated_altitudes[i],
+                        "corrected_altitude": interpolated_corrected_altitudes[i],
+                        "ias": interpolated_ias[i],
+                        "heading": interpolated_heading[i],
+                        "ra": interpolated_ra[i],
+                        "tta": interpolated_tta[i],
+                    }
+                )
 
             # Store the interpolated trajectory for this flight
             interpolated_trajectories[flight_id] = interpolated_points
@@ -450,17 +507,19 @@ def interpolate_trajectories(filtered_trajectories):
 
     return interpolated_trajectories
 
+
 # Función para realizar la interpolación lineal
 def interpolate_ias(alt1, alt2, ias1, ias2, target_altitude):
     if alt2 == alt1:  # Evitar la división por 0
         return ias1
     return ias1 + (ias2 - ias1) * (target_altitude - alt1) / (alt2 - alt1)
 
+
 def extract_IAS_for_altitudes(interpolated_trajectories, altitudes=[850, 1500, 3500]):
-    
+
     # Crear un diccionario para almacenar los resultados
     ias_values = {alt: [] for alt in altitudes}
-    
+
     # Recorremos las aeronaves y sus datos
     for aircraft_id, trajectory in interpolated_trajectories.items():
         for target_altitude in altitudes:
@@ -469,14 +528,16 @@ def extract_IAS_for_altitudes(interpolated_trajectories, altitudes=[850, 1500, 3
             upper_altitude = None
             lower_ias = None
             upper_ias = None
-            
+
             # Buscar las dos alturas más cercanas en la trayectoria
             for point in trajectory:
-                altitude = float(point['corrected_altitude'])
-                ias = float(point['ias']) if point['ias'] != 'N/A' else None
+                altitude = float(point["corrected_altitude"])
+                ias = float(point["ias"]) if point["ias"] != "N/A" else None
 
                 if altitude == target_altitude:
-                    if not any(aircraft_id == a[0] for a in ias_values[target_altitude]):
+                    if not any(
+                        aircraft_id == a[0] for a in ias_values[target_altitude]
+                    ):
                         ias_values[target_altitude].append((aircraft_id, ias))
 
                 elif altitude <= target_altitude:
@@ -491,23 +552,38 @@ def extract_IAS_for_altitudes(interpolated_trajectories, altitudes=[850, 1500, 3
             # Si se encontraron las dos altitudes más cercanas, realizar interpolación
             if lower_altitude is not None and upper_altitude is not None:
                 if lower_ias is not None and upper_ias is not None:
-                    interpolated_ias = interpolate_ias(lower_altitude, upper_altitude, lower_ias, upper_ias, target_altitude)
+                    interpolated_ias = interpolate_ias(
+                        lower_altitude,
+                        upper_altitude,
+                        lower_ias,
+                        upper_ias,
+                        target_altitude,
+                    )
                     # Almacenar el resultado si aún no se registró para esta aeronave
-                    if not any(aircraft_id == a[0] for a in ias_values[target_altitude]):
-                        ias_values[target_altitude].append((aircraft_id, interpolated_ias))
+                    if not any(
+                        aircraft_id == a[0] for a in ias_values[target_altitude]
+                    ):
+                        ias_values[target_altitude].append(
+                            (aircraft_id, interpolated_ias)
+                        )
 
     return ias_values
 
+
 def extract_IAS(loaded_departures, loaded_flights):
     flights = correct_altitude_for_file(loaded_flights)
-    departures_6R, departures_24L = filter_departures_by_runway(loaded_departures, flights)
+    departures_6R, departures_24L = filter_departures_by_runway(
+        loaded_departures, flights
+    )
     trajectories = get_trajectory_for_airplane(loaded_departures, flights)
     filtered_trajectories = filter_empty_trajectories(trajectories)
     interpolated_trajectories = interpolate_trajectories(filtered_trajectories)
-    ias = extract_IAS_for_altitudes(interpolated_trajectories, altitudes=[850, 1500, 3500])
+    ias = extract_IAS_for_altitudes(
+        interpolated_trajectories, altitudes=[850, 1500, 3500]
+    )
     ias_06R = {alt: [] for alt in [850, 1500, 3500]}
     ias_24L = {alt: [] for alt in [850, 1500, 3500]}
-    
+
     # Classify the aircraft based on the departure runway (6R or 24L)
     for altitude in [850, 1500, 3500]:
         for aircraft_id, ias_value in ias[altitude]:
@@ -521,17 +597,23 @@ def extract_IAS(loaded_departures, loaded_flights):
     # Return the classified IAS values for runway 6R and runway 24L
     return ias_06R, ias_24L
 
+
 def extract_turn(loaded_departures, loaded_flights):
     f = correct_altitude_for_file(loaded_flights)
-    trajectories_departures_24L = trajectories_turn_24L(f,loaded_departures)
+    trajectories_departures_24L = trajectories_turn_24L(f, loaded_departures)
     interpolated_trajectories = interpolate_trajectories(trajectories_departures_24L)
     turns = detect_turn_start_from_runway_24L(interpolated_trajectories)
     return turns
 
+
 def trajectories_turn_24L(loaded_flights, loaded_departures):
-    departures_06R, departures_24L = filter_departures_by_runway(loaded_departures, loaded_flights)
+    departures_06R, departures_24L = filter_departures_by_runway(
+        loaded_departures, loaded_flights
+    )
     trajectories = get_trajectory_for_airplane(loaded_departures, loaded_flights)
     empty_trajectories = filter_empty_trajectories(trajectories)
-    trajectories_departures_24L = filter_trajectories_24L(empty_trajectories, departures_24L)
+    trajectories_departures_24L = filter_trajectories_24L(
+        empty_trajectories, departures_24L
+    )
 
     return trajectories_departures_24L
