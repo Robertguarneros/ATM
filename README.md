@@ -264,18 +264,29 @@ This function is composed of multiple smaller functions that together achieve th
   The flow of the function would look like this:
 
   ```mermaid
-  flowchart TD
-      A[Start] -->B(load_departures)
-      B --> C(load_flights)
-      C --> D(load_24h)
-      D --> E(correct_altitude_for_file)
-      E --> F(get_trajectory_for_airplane)
-      F --> G(filter_empty_trajectories)
-      G --> H(trajectories_to_stereographical)
-      H --> I(get_stereographical_from_lat_lon_alt)
-      I --> J(filter_departures_by_runway)
-      J --> K(calculate_min_distance_to_TMR_40_24L)
-      K --> L(End)
+  block-beta
+   columns 5
+   Start space load_departures space load_flights 
+   space space space space space  
+   get_trajectory_for_airplane space correct_altitude_for_file space load_24h
+   space space space space space
+   filter_empty_trajectories space trajectories_to_stereographical space get_stereographical_from_lat_lon_alt
+   space space space space space
+   End space calculate_min_distance_to_TMR_40_24L space filter_departures_by_runway
+
+    Start --> load_departures
+    load_departures --> load_flights
+    load_flights --> load_24h
+    load_24h --> correct_altitude_for_file
+    correct_altitude_for_file --> get_trajectory_for_airplane
+    get_trajectory_for_airplane --> filter_empty_trajectories
+    filter_empty_trajectories --> trajectories_to_stereographical
+    trajectories_to_stereographical --> get_stereographical_from_lat_lon_alt
+    get_stereographical_from_lat_lon_alt --> filter_departures_by_runway
+    filter_departures_by_runway --> calculate_min_distance_to_TMR_40_24L
+    calculate_min_distance_to_TMR_40_24L --> End
+  
+
 ```
 </details>
 </details>
