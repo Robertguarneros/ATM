@@ -220,18 +220,27 @@ threshold_06R_area = {
   The flow of the function would look like this:
 
   ```mermaid
-  flowchart TD
-      A[Start] -->B(load_departures)
-      B --> C(load_flights)
-      C --> D(load_24h)
-      D --> E(filter_departures_by_runway)
-      E --> F(correct_altitude_for_file)
-      F --> G(get_trajectory_for_airplane)
-      G --> H(filter_empty_trajectories)
-      H --> I(interpolate_trajectories)
-      I --> J(filter_trajectories_by_runway)
-      J --> K(get_corrected_altitude_and_ias_at_threshold)
-      K --> L(End)
+  block-beta
+   columns 5
+   Start space load_departures space load_flights 
+   space space space space space  
+   correct_altitude_for_file space filter_departures_by_runway space load_24h
+   space space space space space
+   get_trajectory_for_airplane space filter_empty_trajectories space interpolate_trajectories 
+   space space space space space
+   End space get_corrected_altitude_and_ias_at_threshold space filter_departures_by_runway
+
+    Start --> load_departures
+    load_departures --> load_flights
+    load_flights --> load_24h
+    load_24h --> filter_departures_by_runway
+    filter_departures_by_runway --> correct_altitude_for_file
+    correct_altitude_for_file --> get_trajectory_for_airplane
+    get_trajectory_for_airplane --> filter_empty_trajectories
+    filter_empty_trajectories --> interpolate_trajectories
+    interpolate_trajectories --> filter_trajectories_by_runway
+    filter_trajectories_by_runway --> get_corrected_altitude_and_ias_at_threshold
+    get_corrected_altitude_and_ias_at_threshold --> End
 ```
 </details>
 
