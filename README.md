@@ -104,21 +104,27 @@ This set of functions processes and analyzes flight data to detect the initiatio
   The flow of the function would look like this:
 
   ```mermaid
-  flowchart TD
-      A[Start] --> E{What to load?}
-      A --> B(load_departures)
-      E -->|4h of Flights| C(load_flights)
-      E -->|24h of Flights| D(load_24h)
-      D --> E1(correct_altitude_for_file)
-      C --> E1(correct_altitude_for_file)
-      B --> F(filter_departures_by_runway)
-      E1 --> F(filter_departures_by_runway)
-      F --> G(get_trajectory_for_airplane)
-      G --> H(filter_empty_trajectories)
-      H --> I(filter_trajectories_24L)
-      I --> J(interpolate_trajectories)
-      J --> K(detect_turn_start_from_runway_24L)
-      K --> L(End)
+  block-beta
+    columns 5
+    Start space load_departures space load_flights 
+    space space space space space  
+    filter_departures_by_runway space correct_altitude_for_file space load_24h
+    space space space space space
+    get_trajectory_for_airplane space filter_empty_trajectories space filter_trajectories_24L 
+    space space space space space
+    End space detect_turn_start_from_runway_24L space interpolate_trajectories
+
+    Start --> load_departures
+    load_departures --> load_flights
+    load_flights --> load_24h
+    load_24h --> correct_altitude_for_file
+    correct_altitude_for_file --> filter_departures_by_runway
+    filter_departures_by_runway --> get_trajectory_for_airplane
+    get_trajectory_for_airplane --> filter_empty_trajectories
+    filter_empty_trajectories --> filter_trajectories_24L
+    filter_trajectories_24L --> interpolate_trajectories
+    interpolate_trajectories --> detect_turn_start_from_runway_24L
+    detect_turn_start_from_runway_24L --> End
 ```
 </details>
 
@@ -138,20 +144,26 @@ Additionally, the crossing trajectories and the radial are visualized to verify 
   The flow of the function would look like this:
 
   ```mermaid
-  flowchart TD
-      A[Start] --> E{What to load?}
-      A --> B(load_departures)
-      E -->|4h of Flights| C(load_flights)
-      E -->|24h of Flights| D(load_24h)
-      D --> E1(correct_altitude_for_file)
-      C --> E1(correct_altitude_for_file)
-      B --> F(filter_departures_by_runway)
-      E1 --> F(filter_departures_by_runway)
-      F --> G(get_trajectory_for_airplane)
-      G --> H(filter_empty_trajectories)
-      H --> I(filter_trajectories_24L)
-      I --> J(crosses_fixed_radial)
-      J --> K(End)
+  block-beta
+    columns 5
+    Start space load_departures space load_flights 
+    space space space space space  
+    filter_departures_by_runway space correct_altitude_for_file space load_24h
+    space space space space space
+    get_trajectory_for_airplane space filter_empty_trajectories space filter_trajectories_24L 
+    space space space space space
+    space space End space crosses_fixed_radial
+
+    Start --> load_departures
+    load_departures --> load_flights
+    load_flights --> load_24h
+    load_24h --> correct_altitude_for_file
+    correct_altitude_for_file --> filter_departures_by_runway
+    filter_departures_by_runway --> get_trajectory_for_airplane
+    get_trajectory_for_airplane --> filter_empty_trajectories
+    filter_empty_trajectories --> filter_trajectories_24L
+    filter_trajectories_24L --> crosses_fixed_radial
+    crosses_fixed_radial --> End
 ```
 </details>
 
@@ -170,20 +182,26 @@ This process takes flight and departure data as input, analyzes them through mul
   The flow of the function would look like this:
 
   ```mermaid
-  flowchart TD
-      A[Start] --> E{What to load?}
-      A --> B(load_departures)
-      E -->|4h of Flights| C(load_flights)
-      E -->|24h of Flights| D(load_24h)
-      D --> E1(correct_altitude_for_file)
-      C --> E1(correct_altitude_for_file)
-      B --> F(filter_departures_by_runway)
-      E1 --> F(filter_departures_by_runway)
-      F --> G(get_trajectory_for_airplane)
-      G --> H(filter_empty_trajectories)
-      H --> I(interpolate_trajectories)
-      I --> J(extract_IAS_for_altitudes)
-      J --> K(End)
+  block-beta
+    columns 5
+    Start space load_departures space load_flights 
+    space space space space space  
+    filter_departures_by_runway space correct_altitude_for_file space load_24h
+    space space space space space
+    get_trajectory_for_airplane space filter_empty_trajectories space interpolate_trajectories 
+    space space space space space
+    space space End space extract_IAS_for_altitudes
+
+    Start --> load_departures
+    load_departures --> load_flights
+    load_flights --> load_24h
+    load_24h --> correct_altitude_for_file
+    correct_altitude_for_file --> filter_departures_by_runway
+    filter_departures_by_runway --> get_trajectory_for_airplane
+    get_trajectory_for_airplane --> filter_empty_trajectories
+    filter_empty_trajectories --> interpolate_trajectories
+    interpolate_trajectories --> extract_IAS_for_altitudes
+    extract_IAS_for_altitudes --> End
 ```
 </details>
 
