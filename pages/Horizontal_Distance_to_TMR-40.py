@@ -126,7 +126,7 @@ with col2:
             color=alt.Color("Range:N", title="Distance Range"),
             tooltip=["Range:N", "Percentage:Q"],
         )
-        .properties(title="Percentage of Flights (0 to 2 NM)", width=400, height=500),
+        .properties(title="Percentage of Flights per Range", width=400, height=500),
         use_container_width=True,
     )
 

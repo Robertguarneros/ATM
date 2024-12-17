@@ -645,4 +645,8 @@ def get_corrected_altitude_and_ias_at_threshold_global(
     results = get_corrected_altitude_and_ias_at_threshold(
         filtered_trajectories_024L, filtered_trajectories_06R
     )
-    return results
+
+    number_of_flights_24L = len(filtered_trajectories_024L)
+    number_of_flights_06R = len(filtered_trajectories_06R)
+    number_of_flights_06R_and_24L = number_of_flights_24L + number_of_flights_06R
+    return results, number_of_flights_24L, number_of_flights_06R, number_of_flights_06R_and_24L

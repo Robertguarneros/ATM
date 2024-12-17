@@ -1,12 +1,19 @@
 import altair as alt
 import pandas as pd
 import streamlit as st
+import plotly.graph_objects as go
+
 
 from functions.functions3 import (
     get_corrected_altitude_and_ias_at_threshold_global,
     load_24h,
     load_departures,
     load_flights,
+    correct_altitude_for_file,
+    filter_departures_by_runway,
+    filter_empty_trajectories,
+    filter_trajectories_by_runway,
+    get_trajectory_for_airplane
 )
 
 # Streamlit page configuration
@@ -56,7 +63,7 @@ selected_time_frame = st.sidebar.selectbox(
 selected_flights = time_frame_options[selected_time_frame]
 
 # Get results for runway thresholds
-results = get_corrected_altitude_and_ias_at_threshold_global(
+results, number_of_flights_24L, number_of_flights_06R, number_of_flights_06R_and_24L = get_corrected_altitude_and_ias_at_threshold_global(
     loaded_departures, selected_flights
 )
 runway_options = {
@@ -133,6 +140,73 @@ cols[0].metric("Mean Altitude", f"{df['corrected_altitude'].mean():.2f} ft")
 cols[1].metric("Std. Dev. Altitude", f"{df['corrected_altitude'].std():.2f} ft")
 cols[2].metric("Mean IAS", f"{df['ias'].mean():.2f} knots")
 cols[3].metric("Std. Dev. IAS", f"{df['ias'].std():.2f} knots")
+
+st.divider()
+st.subheader("Threshold Detection Statistics")
+col1, col2, col3 = st.columns(3)
+if selected_runway == "24L and 06R":
+    col1.metric("Total number of flights", f"{number_of_flights_06R_and_24L} flights")
+    col2.metric("Number of flights that did not cross threshold", f"{number_of_flights_06R_and_24L-len(combined_results)} flights")
+# Prepare data for the pie chart
+    pie_data = pd.DataFrame({
+        "Category": ["Crossed Threshold", "Did Not Cross Threshold"],
+        "Count": [number_of_flights_06R_and_24L-(number_of_flights_06R_and_24L-len(combined_results)), number_of_flights_06R_and_24L-len(combined_results)]
+    })
+# Pie chart
+    with col3:
+        st.altair_chart(
+            alt.Chart(pie_data)
+            .mark_arc(innerRadius=50)  # Donut-style chart
+            .encode(
+                theta=alt.Theta("Count:Q", title="Flights"),
+                color=alt.Color("Category:N", title="Flight Status"),
+                tooltip=["Category:N", "Count:Q"]
+            )
+            .properties(title="Flights vs Threshold Status", width=400, height=400),
+            use_container_width=True
+        )
+elif selected_runway == "24L":
+    col1.metric("Total number of flights", f"{number_of_flights_24L} flights")
+    col2.metric("Number of flights that did not cross threshold", f"{number_of_flights_24L-len(results.get("24L", []))} flights")
+# Prepare data for the pie chart
+    pie_data = pd.DataFrame({
+        "Category": ["Crossed Threshold", "Did Not Cross Threshold"],
+        "Count": [number_of_flights_24L-(number_of_flights_24L-len(results.get("24L", []))), number_of_flights_24L-len(results.get("24L", []))]
+    })
+# Pie chart
+    with col3:
+        st.altair_chart(
+            alt.Chart(pie_data)
+            .mark_arc(innerRadius=50)  # Donut-style chart
+            .encode(
+                theta=alt.Theta("Count:Q", title="Flights"),
+                color=alt.Color("Category:N", title="Flight Status"),
+                tooltip=["Category:N", "Count:Q"]
+            )
+            .properties(title="Flights vs Threshold Status", width=400, height=400),
+            use_container_width=True
+        )
+elif selected_runway == "06R":
+    col1.metric("Total number of flights", f"{number_of_flights_06R} flights")
+    col2.metric("Number of flights that did not cross threshold", f"{number_of_flights_06R-len(results.get("06R", []))} flights")
+# Prepare data for the pie chart
+    pie_data = pd.DataFrame({
+        "Category": ["Crossed Threshold", "Did Not Cross Threshold"],
+        "Count": [number_of_flights_06R-(number_of_flights_06R-len(results.get("06R", []))), number_of_flights_06R-len(results.get("06R", []))]
+    })
+# Pie chart
+    with col3:
+        st.altair_chart(
+            alt.Chart(pie_data)
+            .mark_arc(innerRadius=50)  # Donut-style chart
+            .encode(
+                theta=alt.Theta("Count:Q", title="Flights"),
+                color=alt.Color("Category:N", title="Flight Status"),
+                tooltip=["Category:N", "Count:Q"]
+            )
+            .properties(title="Flights vs Threshold Status", width=400, height=400),
+            use_container_width=True
+        )
 
 # Divider
 st.divider()
