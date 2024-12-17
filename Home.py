@@ -26,11 +26,13 @@ st.markdown(
 - Show statistics of the position and corrected altitude when the departure (from 24L) starts turning.
 - Show whether radial 234 is crossed when departing.
 - Show IAS of departures at 850, 1500, and 3500 ft for both runways.
-- Altitude corrected and IAS of traffic at threshold when departing at 24L and 06R.
-- Horizontal (stereographical) distance from departures to TMR-40 when departing from 24L.
+- Show IAS of departures at 850, 1500 and 3500 ft for both runways
+- Show the corrected altitude and IAS of traffic at threshold when departing at 24L and 06R
+- Calculate the horizontal (stereographical) distance from departures to TMR-40 when departing from 24L
 """
 )
 
 st.write(
     "On the left sidebar, you can navigate to the different sections of the project to view the statistics and visualizations."
 )
+st.write("Please be patient when changing pages or loading a new time frame.")

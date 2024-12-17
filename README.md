@@ -10,8 +10,36 @@
 - Show statistics of the position and corrected altitude when the departure (from 24L) starts turning
 - Show whether radial 234 is crossed when departing 
 - Show IAS of departures at 850, 1500 and 3500 ft for both runways
-- Altitude corrected and IAS of traffic at threshold when departing at 24L and 06R
-- Horizontal (stereographical) distance from departures to TMR-40 when departing from 24L
+- Show the corrected altitude and IAS of traffic at threshold when departing at 24L and 06R
+- Calculate the horizontal (stereographical) distance from departures to TMR-40 when departing from 24L
+
+
+## Overview of Project
+We have developed the following planning:
+```mermaid
+gantt
+    title Planning
+    dateFormat  DD-MM-YYYY
+
+    section Planning
+    Understanding the Project :a1, 2024-11-26, 1d
+    Select tools (Github, Python)   :a2,2024-11-26 , 1d
+    Create project plan   :a3,2024-11-26, 1d
+
+    section Development
+    Create repository   :b1, 2024-11-26, 1d
+    Create blank project :b2, 2024-11-26, 1d
+    Create functions  :b3, after b2, 6d
+    Extract Data : b4, after b3, 1d
+
+    section Deployment
+    Create web page   :c1, 2024-12-4, 2d
+    Testing :c2, 2024-12-4 , 3d
+    Create report  :c4, 2024-12-6, 1d
+```
+The tasks have been divided among the group members as can be seen [Here](https://github.com/users/Robertguarneros/projects/5)
+
+
 
 ## Functions
 
@@ -36,7 +64,7 @@ This process is designed to evaluate and compare the separation between consecut
 - `extract_contiguous_pairs`: processes the flight data (2305_02_dep_lebl.xlsx) to identify consecutive flights departing from the same runway within a time threshold (4 minutes by default). It groups the flights based on their departure runway (24L or 06R) and prepares additional flight details.
 - `calculate_min_distances`: aims to compute the minimum distances between pairs of flights using processed flight trajectories (`get_trajectory_for_airplane`). This calculation takes into account the stereographic coordinates of the flights, filtering out those that are within specific areas on the runway thresholds to know when to start making calculations.
 - `compare_radar_separation`: compare the separation distance between consecutive flights and checks if it complies with the minimum radar separation distance (3 NM). It returns whether each pair of flights meets the minimum separation requirement and the percentage of compliant pairs.
-- `compare_wake_separation`: considers the wake turbulence separation distances based on aircraft types (Super Heavy, Heavy, Medium, and Light). It compares and returns the actual separation distance between pairs of flights against the required distance for their respective aircraft wakes.
+- `compare_wake_separation`: considers the wake turbulence separation distances based on aircraft types (Super Heavy, Heavy, Medium, and Light). It compares and returns the actual separation distance between pairs of flights against the required distance for their respective aircraft wakes. In cases that do not appear in the table, such as average wake followed by average wake, 3 NM has been applied since minimum separation per wake is not applied.
 - `compare_loa_separation`: compare the separation between flights using a table based on aircraft type and their SID (Standard Instrument Departure) group. Returns the distances between consecutive flights, in addition to information on the type of aircraft of each flight and the SID corresponding to each one, thus knowing the data to be able to assign the minimum distances shown in the LoA table.
 
 <details>
@@ -46,10 +74,12 @@ This process is designed to evaluate and compare the separation between consecut
 
   ```mermaid
   flowchart TD
-      A[Start] -->B(extract_contiguous_pairs)
-      B2(load_departures)-->B
+      A[Start] 
+      B(extract_contiguous_pairs)
+      A-->B2(load_departures)
+      B2-->B -->A2
       A2(load_flights) --> C
-      B --> C(calculate_min_distances)
+      C(calculate_min_distances)
       C --> D1(compare_radar_separation)
       C --> D2(compare_wake_separation)
       C --> D3(compare_loa_separation)
@@ -74,21 +104,27 @@ This set of functions processes and analyzes flight data to detect the initiatio
   The flow of the function would look like this:
 
   ```mermaid
-  flowchart TD
-      A[Start] --> E{What to load?}
-      A --> B(load_departures)
-      E -->|4h of Flights| C(load_flights)
-      E -->|24h of Flights| D(load_24h)
-      D --> E1(correct_altitude_for_file)
-      C --> E1(correct_altitude_for_file)
-      B --> F(filter_departures_by_runway)
-      E1 --> F(filter_departures_by_runway)
-      F --> G(get_trajectory_for_airplane)
-      G --> H(filter_empty_trajectories)
-      H --> I(filter_trajectories_24L)
-      I --> J(interpolate_trajectories)
-      J --> K(detect_turn_start_from_runway_24L)
-      K --> L(End)
+  block-beta
+    columns 5
+    Start space load_departures space load_flights 
+    space space space space space  
+    filter_departures_by_runway space correct_altitude_for_file space load_24h
+    space space space space space
+    get_trajectory_for_airplane space filter_empty_trajectories space filter_trajectories_24L 
+    space space space space space
+    End space detect_turn_start_from_runway_24L space interpolate_trajectories
+
+    Start --> load_departures
+    load_departures --> load_flights
+    load_flights --> load_24h
+    load_24h --> correct_altitude_for_file
+    correct_altitude_for_file --> filter_departures_by_runway
+    filter_departures_by_runway --> get_trajectory_for_airplane
+    get_trajectory_for_airplane --> filter_empty_trajectories
+    filter_empty_trajectories --> filter_trajectories_24L
+    filter_trajectories_24L --> interpolate_trajectories
+    interpolate_trajectories --> detect_turn_start_from_runway_24L
+    detect_turn_start_from_runway_24L --> End
 ```
 </details>
 
@@ -108,20 +144,26 @@ Additionally, the crossing trajectories and the radial are visualized to verify 
   The flow of the function would look like this:
 
   ```mermaid
-  flowchart TD
-      A[Start] --> E{What to load?}
-      A --> B(load_departures)
-      E -->|4h of Flights| C(load_flights)
-      E -->|24h of Flights| D(load_24h)
-      D --> E1(correct_altitude_for_file)
-      C --> E1(correct_altitude_for_file)
-      B --> F(filter_departures_by_runway)
-      E1 --> F(filter_departures_by_runway)
-      F --> G(get_trajectory_for_airplane)
-      G --> H(filter_empty_trajectories)
-      H --> I(filter_trajectories_24L)
-      I --> J(crosses_fixed_radial)
-      J --> K(End)
+  block-beta
+    columns 5
+    Start space load_departures space load_flights 
+    space space space space space  
+    filter_departures_by_runway space correct_altitude_for_file space load_24h
+    space space space space space
+    get_trajectory_for_airplane space filter_empty_trajectories space filter_trajectories_24L 
+    space space space space space
+    space space End space crosses_fixed_radial
+
+    Start --> load_departures
+    load_departures --> load_flights
+    load_flights --> load_24h
+    load_24h --> correct_altitude_for_file
+    correct_altitude_for_file --> filter_departures_by_runway
+    filter_departures_by_runway --> get_trajectory_for_airplane
+    get_trajectory_for_airplane --> filter_empty_trajectories
+    filter_empty_trajectories --> filter_trajectories_24L
+    filter_trajectories_24L --> crosses_fixed_radial
+    crosses_fixed_radial --> End
 ```
 </details>
 
@@ -140,20 +182,26 @@ This process takes flight and departure data as input, analyzes them through mul
   The flow of the function would look like this:
 
   ```mermaid
-  flowchart TD
-      A[Start] --> E{What to load?}
-      A --> B(load_departures)
-      E -->|4h of Flights| C(load_flights)
-      E -->|24h of Flights| D(load_24h)
-      D --> E1(correct_altitude_for_file)
-      C --> E1(correct_altitude_for_file)
-      B --> F(filter_departures_by_runway)
-      E1 --> F(filter_departures_by_runway)
-      F --> G(get_trajectory_for_airplane)
-      G --> H(filter_empty_trajectories)
-      H --> I(interpolate_trajectories)
-      I --> J(extract_IAS_for_altitudes)
-      J --> K(End)
+  block-beta
+    columns 5
+    Start space load_departures space load_flights 
+    space space space space space  
+    filter_departures_by_runway space correct_altitude_for_file space load_24h
+    space space space space space
+    get_trajectory_for_airplane space filter_empty_trajectories space interpolate_trajectories 
+    space space space space space
+    space space End space extract_IAS_for_altitudes
+
+    Start --> load_departures
+    load_departures --> load_flights
+    load_flights --> load_24h
+    load_24h --> correct_altitude_for_file
+    correct_altitude_for_file --> filter_departures_by_runway
+    filter_departures_by_runway --> get_trajectory_for_airplane
+    get_trajectory_for_airplane --> filter_empty_trajectories
+    filter_empty_trajectories --> interpolate_trajectories
+    interpolate_trajectories --> extract_IAS_for_altitudes
+    extract_IAS_for_altitudes --> End
 ```
 </details>
 
@@ -190,18 +238,27 @@ threshold_06R_area = {
   The flow of the function would look like this:
 
   ```mermaid
-  flowchart TD
-      A[Start] -->B(load_departures)
-      B --> C(load_flights)
-      C --> D(load_24h)
-      D --> E(filter_departures_by_runway)
-      E --> F(correct_altitude_for_file)
-      F --> G(get_trajectory_for_airplane)
-      G --> H(filter_empty_trajectories)
-      H --> I(interpolate_trajectories)
-      I --> J(filter_trajectories_by_runway)
-      J --> K(get_corrected_altitude_and_ias_at_threshold)
-      K --> L(End)
+  block-beta
+   columns 5
+   Start space load_departures space load_flights 
+   space space space space space  
+   correct_altitude_for_file space filter_departures_by_runway space load_24h
+   space space space space space
+   get_trajectory_for_airplane space filter_empty_trajectories space interpolate_trajectories 
+   space space space space space
+   End space get_corrected_altitude_and_ias_at_threshold space filter_departures_by_runway
+
+    Start --> load_departures
+    load_departures --> load_flights
+    load_flights --> load_24h
+    load_24h --> filter_departures_by_runway
+    filter_departures_by_runway --> correct_altitude_for_file
+    correct_altitude_for_file --> get_trajectory_for_airplane
+    get_trajectory_for_airplane --> filter_empty_trajectories
+    filter_empty_trajectories --> interpolate_trajectories
+    interpolate_trajectories --> filter_trajectories_by_runway
+    filter_trajectories_by_runway --> get_corrected_altitude_and_ias_at_threshold
+    get_corrected_altitude_and_ias_at_threshold --> End
 ```
 </details>
 
@@ -225,21 +282,35 @@ This function is composed of multiple smaller functions that together achieve th
   The flow of the function would look like this:
 
   ```mermaid
-  flowchart TD
-      A[Start] -->B(load_departures)
-      B --> C(load_flights)
-      C --> D(load_24h)
-      D --> E(correct_altitude_for_file)
-      E --> F(get_trajectory_for_airplane)
-      F --> G(filter_empty_trajectories)
-      G --> H(trajectories_to_stereographical)
-      H --> I(get_stereographical_from_lat_lon_alt)
-      I --> J(filter_departures_by_runway)
-      J --> K(calculate_min_distance_to_TMR_40_24L)
-      K --> L(End)
+  block-beta
+   columns 5
+   Start space load_departures space load_flights 
+   space space space space space  
+   get_trajectory_for_airplane space correct_altitude_for_file space load_24h
+   space space space space space
+   filter_empty_trajectories space trajectories_to_stereographical space get_stereographical_from_lat_lon_alt
+   space space space space space
+   End space calculate_min_distance_to_TMR_40_24L space filter_departures_by_runway
+
+    Start --> load_departures
+    load_departures --> load_flights
+    load_flights --> load_24h
+    load_24h --> correct_altitude_for_file
+    correct_altitude_for_file --> get_trajectory_for_airplane
+    get_trajectory_for_airplane --> filter_empty_trajectories
+    filter_empty_trajectories --> trajectories_to_stereographical
+    trajectories_to_stereographical --> get_stereographical_from_lat_lon_alt
+    get_stereographical_from_lat_lon_alt --> filter_departures_by_runway
+    filter_departures_by_runway --> calculate_min_distance_to_TMR_40_24L
+    calculate_min_distance_to_TMR_40_24L --> End
+  
+
 ```
 </details>
 </details>
+
+## Project Assessment
+This project was particularly engaging as it challenged us to create functions to extract specific data and statistics, such as those related to flight separation, altitude corrections, and speed metrics at various flight phases. It allowed us to be creative in designing methods to present the data in a clear and engaging way. We developed efficient and fast algorithms to process the required information. Given the flexibility to choose the type of application, we opted for a web app due to its accessibility and broad reach. While the limited time frame posed challenges, we were deeply satisfied with the overall outcome of the project. It was a fulfilling experience that combined technical development with creative problem-solving.
 
 
 ## For Developers
@@ -312,6 +383,8 @@ The main Python libraries used were:
 - numpy
 - csv
 - altair
+- collections
+- defaultdir
 
 ### Tools Used
 
