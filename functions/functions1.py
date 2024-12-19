@@ -1,5 +1,6 @@
 # Son los q me ha dicho GPT si hay otros mejores se cambia
 import csv
+import math
 import re
 from datetime import timedelta
 
@@ -697,48 +698,44 @@ def compare_loa_separation(contiguous_flights_dist, flight_info):
     return results, compliance_percentage
 
 
+# Constantes globales
+RADIUS_EARTH_KM = 6371.0  # Radio de la Tierra en kilómetros
+
+# Función para calcular la distancia haversine
+def haversine(lat1, lon1, lat2, lon2):
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return RADIUS_EARTH_KM * c
+
+# Función para verificar si un punto está dentro del área circular
+def is_within_circle(lat, lon, center, radius_km):
+    distance = haversine(lat, lon, center[0], center[1])
+    return distance <= radius_km
+
+
 def calculate_min_distances(
     loaded_departures, loaded_flights, contiguous_flights_24L, contiguous_flights_06R
 ):
-    """
-    Calcula las distancias mínimas entre pares de vuelos utilizando trayectorias procesadas.
-    """
-    # Obtener las trayectorias completas de los vuelos
     trajectories = get_trajectory_for_airplane(loaded_departures, loaded_flights)
-    trajectories = filter_empty_trajectories(
-        trajectories
-    )  # Filtrar trayectorias vacías
+    trajectories = filter_empty_trajectories(trajectories)  # Filtrar trayectorias vacías
 
-    # Definir las áreas de los umbrales como cajas delimitadoras
-    threshold_06R_area = {
-        "min_lat": 41.291979,  # Bottom latitude
-        "max_lat": 41.293154,  # Top latitude
-        "min_lon": 2.103089,  # Left longitude
-        "max_lon": 2.105704,  # Right longitude
-    }
-    threshold_24L_area = {
-        "min_lat": 41.281430,  # Bottom latitude
-        "max_lat": 41.282578,  # Top latitude
-        "min_lon": 2.072046,  # Left longitude
-        "max_lon": 2.074564,  # Right longitude
-    }
+    # Configurar las áreas circulares
+    threshold_06R_center = (41.291979, 2.104396)
+    threshold_24L_center = (41.281960, 2.073305)
+    RADIUS_NM = 100  # Radio en millas náuticas
+    RADIUS_KM = RADIUS_NM * 1.852  # Convertir a kilómetros
 
-    results_24L = {}
-    results_06R = {}
+    results_24L_TMA = {}
+    results_06R_TMA = {}
 
-    # Función para verificar si un punto está dentro de un área
-    def is_within_area(lat, lon, area):
-        return (
-            area["min_lat"] <= lat <= area["max_lat"]
-            and area["min_lon"] <= lon <= area["max_lon"]
-        )
-
-    # Calcular distancias mínimas para pares de vuelos en una pista
-    def calculate_distances_for_pairs(pairs, threshold_area, results):
+    def calculate_distances_for_pairs(pairs, threshold_center, radius_km, results):
         for pair in pairs:
             plane1, plane2 = pair
-            min_distance = float("inf")
-            found = False
+            min_distance = float("inf")  # Inicializar la distancia mínima
+            inside_area = False  # Para rastrear si el avión 2 está dentro del área
 
             # Obtener las trayectorias para ambos vuelos
             traj1 = trajectories.get(plane1, [])
@@ -749,13 +746,12 @@ def calculate_min_distances(
             traj2_by_time = {float(point["time"]): point for point in traj2}
 
             # Buscar tiempos comunes
-            common_times = set(traj1_by_time.keys()) & set(traj2_by_time.keys())
+            common_times = sorted(set(traj1_by_time.keys()) & set(traj2_by_time.keys()))
 
             for time in common_times:
                 point_1 = traj1_by_time[time]
                 point_2 = traj2_by_time[time]
 
-                # Convertir coordenadas y alturas a flotantes
                 lat_1, lon_1, h_1 = (
                     float(point_1["latitude"]),
                     float(point_1["longitude"]),
@@ -767,34 +763,113 @@ def calculate_min_distances(
                     float(point_2["height"]),
                 )
 
-                # Ignorar si el segundo vuelo está dentro del área del umbral
-                if is_within_area(lat_2, lon_2, threshold_area):
-                    continue
+                if not inside_area and is_within_circle(lat_2, lon_2, threshold_center, radius_km):
+                    inside_area = True  # Empieza a calcular cuando el avión 2 entra en el área
 
-                # Calcular coordenadas estereográficas
-                coords_1 = get_stereographical_from_lat_lon_alt(lat_1, lon_1, h_1)
-                coords_2 = get_stereographical_from_lat_lon_alt(lat_2, lon_2, h_2)
+                if inside_area:
+                    coords_1 = get_stereographical_from_lat_lon_alt(lat_1, lon_1, h_1)
+                    coords_2 = get_stereographical_from_lat_lon_alt(lat_2, lon_2, h_2)
 
-                # Calcular distancia
-                dist = calculate_distance(
-                    coords_1["U"], coords_1["V"], coords_2["U"], coords_2["V"]
-                ).item()
+                    # Calcular distancia en 3D
+                    dist = calculate_distance(
+                        coords_1["U"], coords_1["V"], coords_2["U"], coords_2["V"]
+                    ).item()
 
-                min_distance = min(min_distance, dist)
-                found = True
+                    min_distance = min(min_distance, dist)  # Actualizar la distancia mínima
 
-            if found and min_distance != float("inf"):
+            if min_distance != float("inf"):
                 results[pair] = min_distance
 
     # Procesar cada conjunto de vuelos para las pistas
     calculate_distances_for_pairs(
-        contiguous_flights_24L, threshold_24L_area, results_24L
+        contiguous_flights_24L, threshold_24L_center, RADIUS_KM, results_24L_TMA
     )
     calculate_distances_for_pairs(
-        contiguous_flights_06R, threshold_06R_area, results_06R
+        contiguous_flights_06R, threshold_06R_center, RADIUS_KM, results_06R_TMA
     )
 
-    return results_24L, results_06R
+    return results_24L_TMA, results_06R_TMA
+
+
+
+
+def calculate_exit_distances(
+    loaded_departures, loaded_flights, contiguous_flights_24L, contiguous_flights_06R
+):
+    trajectories = get_trajectory_for_airplane(loaded_departures, loaded_flights)
+    trajectories = filter_empty_trajectories(trajectories)  # Filtrar trayectorias vacías
+
+    RADIUS_NM = 0.5  # Radio en millas náuticas
+    RADIUS_KM = RADIUS_NM * 1.852  # Convertimos el radio a kilómetros
+
+    threshold_06R_center = (41.282311, 2.074351)
+    threshold_24L_center = (41.291997, 2.103112)
+
+    results_24L_TWR = {}
+    results_06R_TWR = {}
+
+    def calculate_distances_for_pairs(pairs, center, radius_km, results):
+        for pair in pairs:
+            plane1, plane2 = pair
+            min_distance = float("inf")
+            found = False
+
+            traj1 = trajectories.get(plane1, [])
+            traj2 = trajectories.get(plane2, [])
+
+            traj1_by_time = {float(point["time"]): point for point in traj1}
+            traj2_by_time = {float(point["time"]): point for point in traj2}
+
+            common_times = sorted(set(traj1_by_time.keys()) & set(traj2_by_time.keys()))
+
+            inside_area = False  # Para rastrear si el avión 2 estaba dentro del área
+
+            for time in common_times:
+                point_1 = traj1_by_time[time]
+                point_2 = traj2_by_time[time]
+
+                lat_1, lon_1, h_1 = (
+                    float(point_1["latitude"]),
+                    float(point_1["longitude"]),
+                    float(point_1["height"]),
+                )
+                lat_2, lon_2, h_2 = (
+                    float(point_2["latitude"]),
+                    float(point_2["longitude"]),
+                    float(point_2["height"]),
+                )
+
+                # Verificar si el avión 2 está dentro del área
+                if is_within_circle(lat_2, lon_2, center, radius_km):
+                    inside_area = True
+                    continue  # Ignorar mientras el avión 2 esté dentro del área
+
+                # Si el avión 2 acaba de salir del área, calcular distancia
+                if inside_area:
+                    coords_1 = get_stereographical_from_lat_lon_alt(lat_1, lon_1, h_1)
+                    coords_2 = get_stereographical_from_lat_lon_alt(lat_2, lon_2, h_2)
+
+                    dist = calculate_distance(
+                        coords_1["U"], coords_1["V"], coords_2["U"], coords_2["V"]
+                    ).item()
+
+                    min_distance = min(min_distance, dist)
+                    found = True
+                    break  # Solo calcular para la primera salida del área
+
+            if found and min_distance != float("inf"):
+                results[pair] = min_distance
+
+    calculate_distances_for_pairs(
+        contiguous_flights_24L, threshold_24L_center, RADIUS_KM, results_24L_TWR
+    )
+    calculate_distances_for_pairs(
+        contiguous_flights_06R, threshold_06R_center, RADIUS_KM, results_06R_TWR
+    )
+
+    return results_24L_TWR, results_06R_TWR
+
+
 
 
 def general(file_path):
@@ -806,18 +881,22 @@ def general(file_path):
     )
     dep = load_departures()
     csv_file_alt = correct_altitude_for_file(csv_file)
-    results_24L, results_06R = calculate_min_distances(
+    results_24L_TMA, results_06R_TMA = calculate_min_distances(
+        dep, csv_file_alt, contiguous_flights_24L, contiguous_flights_06R
+    )
+    results_24L_TWR, results_06R_TWR = calculate_exit_distances(
         dep, csv_file_alt, contiguous_flights_24L, contiguous_flights_06R
     )
 
-    return results_24L, results_06R, flight_info
+    return results_24L_TMA, results_06R_TMA, results_24L_TWR, results_06R_TWR, flight_info
 
 
-"""
-file_path = "assets/CsvFiles/P3_04_08h.csv"
-results_24L, results_06R, flight_info = general(file_path)
+'''
+file_path = "assets/CsvFiles/P3_08_12h.csv"
+results_24L_TMA, results_06R_TMA, results_24L_TWR, results_06R_TWR, flight_info = general(file_path)
+print(results_24L_TMA,"\n")
+print(results_24L_TWR,"\n")
+
 # Poner la funcion q sea para ver la salida
-results, compliance_percentage = compare_loa_separation(results_24L, flight_info) # flight_info    en caso de utilizar el wake oel loa
-print(results)
-print(compliance_percentage)
-"""
+results, compliance_percentage = compare_loa_separation(results_24L_TWR, flight_info) # flight_info    en caso de utilizar el wake oel loa
+'''
