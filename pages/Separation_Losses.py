@@ -75,11 +75,11 @@ combined_results_TMA = dict(combined_results_TMA)
 combined_results_TWR = defaultdict(float)
 
 # Sumar los valores de results_24L
-for key, value in results_24L_TMA.items():
+for key, value in results_24L_TWR.items():
     combined_results_TWR[key] += value
 
 # Sumar los valores de results_06R
-for key, value in results_06R_TMA.items():
+for key, value in results_06R_TWR.items():
     combined_results_TWR[key] += value
 
 # Convertir de nuevo a un diccionario normal si lo prefieres
