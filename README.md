@@ -33,9 +33,9 @@ gantt
     Extract Data : b4, after b3, 1d
 
     section Deployment
-    Create web page   :c1, 2024-12-4, 2d
-    Testing :c2, 2024-12-4 , 3d
-    Create report  :c4, 2024-12-6, 1d
+    Create web page   :c1, 2024-12-04, 2d
+    Testing :c2, 2024-12-04 , 3d
+    Create report  :c4, 2024-12-06, 1d
 ```
 The tasks have been divided among the group members as can be seen [Here](https://github.com/users/Robertguarneros/projects/5)
 
