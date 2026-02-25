@@ -28,10 +28,10 @@ openpyxl==3.1.5
 packaging==24.2
 pandas==2.2.3
 pathspec==0.12.1
-pillow==11.0.0
+pillow==12.1.1
 platformdirs==4.3.6
 plotly==5.24.1
-protobuf==5.29.5
+protobuf==5.29.6
 pyarrow==18.1.0
 pycodestyle==2.12.1
 pydeck==0.9.1
@@ -51,5 +51,5 @@ toml==0.10.2
 tornado==6.5
 typing_extensions==4.12.2
 tzdata==2024.2
-urllib3==2.5.0
+urllib3==2.6.0
 xyzservices==2024.9.0
